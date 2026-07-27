@@ -1,0 +1,6 @@
+# clangd cannot find the compilation database on its own: it only searches the
+# file's own directory, each ancestor, and a `build/` child of those. Our presets
+# build out-of-source under out/build/<preset>/, so point clangd at one explicitly.
+# Switch the path here when you switch presets.
+CompileFlags:
+  CompilationDatabase: out/build/linux-gcc-debug
