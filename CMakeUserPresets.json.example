@@ -1,0 +1,13 @@
+{
+  "version": 6,
+  "include": ["CMakePresets.json"],
+  "configurePresets": [
+    {
+      "name": "my-linux-debug",
+      "inherits": "linux-clang-debug",
+      "cacheVariables": {
+        "CMAKE_CXX_COMPILER": "/absolute/path/to/clang++"
+      }
+    }
+  ]
+}
