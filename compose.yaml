@@ -6,7 +6,7 @@ services:
       context: .
       dockerfile: docker/Dockerfile
       target: linux
-    image: cpp26-vulkan-engine-linux:16.1
+    image: cpp26-vulkan-engine-linux:17-trunk
     working_dir: /workspace
     user: "${LOCAL_UID:-1000}:${LOCAL_GID:-1000}"
     environment:

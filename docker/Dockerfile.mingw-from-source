@@ -1,24 +1,38 @@
 # syntax=docker/dockerfile:1.7
-# Builds a reproducible Linux-hosted GCC 16.1.0 / MinGW-w64 14.0.0 cross
-# toolchain. This follows the same bootstrap sequence as the published
-# ghcr.io/nathan-baggs/custom-mingw64 image (binutils, mingw headers, gcc
-# stage 1, mingw crt + winpthreads, gcc stage 2) but pins released source
-# tarballs instead of tracking trunk, so the toolchain version stops moving
-# under you. Optional: docker/Dockerfile's windows-mingw stage uses the
-# published image by default; point it at this one instead when the
-# version drift between the two containers' GCC needs to be pinned down.
+# Builds a Linux-hosted GCC 17 / MinGW-w64 cross toolchain. This follows the
+# same bootstrap sequence as the published ghcr.io/nathan-baggs/custom-mingw64
+# image (binutils, mingw headers, gcc stage 1, mingw crt + winpthreads, gcc
+# stage 2). GCC 17 has not cut a stable release, so there is no numbered
+# tarball to pin the way GCC 16.1.0 was; GCC_SNAPSHOT instead freezes a
+# specific dated trunk snapshot so that half of the toolchain still stops
+# moving under you. Required: docker/Dockerfile's windows-mingw stage builds
+# FROM the image tag produced here (see docs/BUILDING.md) -- there is no
+# published image with GCC 17 to fall back to the way there was for GCC 16.
+#
+# MINGW_REF tracks mingw-w64's master branch rather than the 14.0.0 release:
+# GCC 17 trunk enforces __stack_chk_guard as `uintptr_t` (upstream PR
+# c/121911), which the 14.0.0 release's `void *__stack_chk_guard` conflicts
+# with and fails to build. The fix landed on mingw-w64 master 2026-05-07
+# (commit 5d04f8f, "ssp: fix `__stack_chk_guard` type") but has not reached
+# a numbered release yet. Unlike GCC_SNAPSHOT this is a floating branch
+# name, not a frozen coordinate: `docker build --no-cache` can pick up a
+# different mingw-w64 state on a later rebuild. Re-pin to a release once
+# mingw-w64 cuts one that includes the fix.
 FROM ubuntu:24.04
 
 ARG TARGET=x86_64-w64-mingw32
 ARG PREFIX=/usr/local
 ARG BINUTILS_VERSION=2.45
-ARG GCC_VERSION=16.1.0
-ARG MINGW_VERSION=14.0.0
+ARG GCC_SNAPSHOT=17-20260727
+ARG MINGW_REF=master
 # Ubuntu 24.04's apt cmake package (3.28.x) predates GCC 16 in its per-compiler
 # C++ standard feature tables, so it rejects cxx_std_26 even though GCC 16
 # itself supports -std=c++26 fine. Pin a CMake release known to recognize it
 # (the same version the linux stage's Debian trixie apt package resolves to)
-# instead of trusting whatever the base distro currently ships.
+# instead of trusting whatever the base distro currently ships. CMake's
+# per-compiler tables use >= version thresholds, so this same pin also
+# accepts GCC 17 trunk reporting itself as a newer version than any
+# threshold CMake 3.31.6 knows about.
 ARG CMAKE_VERSION=3.31.6
 
 ENV PATH=${PREFIX}/bin:${PATH} \
@@ -84,12 +98,13 @@ RUN curl --fail --location --retry 3 \
     && make install
 
 RUN curl --fail --location --retry 3 \
-        "https://sourceforge.net/projects/mingw-w64/files/mingw-w64/mingw-w64-release/mingw-w64-v${MINGW_VERSION}.tar.bz2/download" \
-        --output mingw-w64.tar.bz2 \
-    && tar -xf mingw-w64.tar.bz2 \
+        "https://codeload.github.com/mingw-w64/mingw-w64/tar.gz/${MINGW_REF}" \
+        --output mingw-w64.tar.gz \
+    && tar -xf mingw-w64.tar.gz \
+    && mv mingw-w64-* mingw-w64-src \
     && mkdir build-mingw-headers \
     && cd build-mingw-headers \
-    && ../mingw-w64-v${MINGW_VERSION}/mingw-w64-headers/configure \
+    && ../mingw-w64-src/mingw-w64-headers/configure \
         --prefix=${PREFIX}/${TARGET} \
         --host=${TARGET} \
         --enable-sdk=all \
@@ -97,12 +112,12 @@ RUN curl --fail --location --retry 3 \
     && make install
 
 RUN curl --fail --location --retry 3 \
-        "https://ftp.gnu.org/gnu/gcc/gcc-${GCC_VERSION}/gcc-${GCC_VERSION}.tar.xz" \
+        "https://gcc.gnu.org/pub/gcc/snapshots/${GCC_SNAPSHOT}/gcc-${GCC_SNAPSHOT}.tar.xz" \
         --output gcc.tar.xz \
     && tar -xf gcc.tar.xz \
     && mkdir build-gcc \
     && cd build-gcc \
-    && ../gcc-${GCC_VERSION}/configure \
+    && ../gcc-${GCC_SNAPSHOT}/configure \
         --prefix=${PREFIX} \
         --target=${TARGET} \
         --enable-languages=c,c++ \
@@ -114,13 +129,14 @@ RUN curl --fail --location --retry 3 \
         --enable-static \
         --disable-werror \
         --disable-libstdcxx-pch \
+        --disable-libssp \
         --with-system-zlib \
     && make -j"$(nproc)" all-gcc \
     && make install-gcc
 
 RUN mkdir build-mingw-crt \
     && cd build-mingw-crt \
-    && ../mingw-w64-v${MINGW_VERSION}/mingw-w64-crt/configure \
+    && ../mingw-w64-src/mingw-w64-crt/configure \
         --prefix=${PREFIX}/${TARGET} \
         --host=${TARGET} \
         --disable-lib32 \
@@ -131,7 +147,7 @@ RUN mkdir build-mingw-crt \
 
 RUN mkdir build-winpthreads \
     && cd build-winpthreads \
-    && ../mingw-w64-v${MINGW_VERSION}/mingw-w64-libraries/winpthreads/configure \
+    && ../mingw-w64-src/mingw-w64-libraries/winpthreads/configure \
         --prefix=${PREFIX}/${TARGET} \
         --host=${TARGET} \
         --disable-shared \

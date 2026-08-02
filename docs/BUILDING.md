@@ -50,7 +50,21 @@ a toolchain on the host: `linux` builds a native Linux binary, and
 application; run the resulting Linux binary on Linux and the `.exe` on
 Windows.
 
+Both containers currently build GCC 17 from a dated trunk snapshot, not a
+numbered release: GCC 17 has not shipped yet (see `docker/Dockerfile`'s
+`linux-gcc-builder` stage and `docker/Dockerfile.mingw-from-source`'s
+`GCC_SNAPSHOT` build arg). This is unreleased, experimental compiler
+behavior -- expect it to need re-pinning to a newer snapshot occasionally,
+and expect the occasional trunk regression. Revert both to a numbered GCC
+release once one exists.
+
+`windows-mingw` has no published image to fall back to for GCC 17 (the
+`ghcr.io/nathan-baggs/custom-mingw64` image tracks a released GCC), so its
+cross toolchain must be built locally first:
+
 ```bash
+docker build -f docker/Dockerfile.mingw-from-source -t cpp26-vulkan-engine-mingw:17-trunk .
+
 docker compose build linux windows-mingw
 
 docker compose run --rm linux cmake --preset docker-linux-gcc-debug
@@ -63,7 +77,10 @@ docker compose run --rm windows-mingw cmake --build --preset docker-windows-ming
 
 The equivalent `make images`, `make build-docker-linux`,
 `make test-docker-linux`, and `make build-docker-windows` targets wrap the
-same commands.
+same commands; `make images` already builds the mingw toolchain image first.
+Both the native GCC 17 bootstrap (`linux-gcc-builder` stage) and the cross
+toolchain bootstrap take noticeably longer than pulling a prebuilt image did
+-- this is a one-time cost per Docker layer cache, not a per-build cost.
 
 The `docker-windows-mingw-debug` preset builds scaffold-only
 (`ENGINE_REQUIRE_VULKAN_SDK=OFF`): the Linux container has no Windows Vulkan
@@ -75,24 +92,28 @@ installs a real Vulkan loader and links normally.
 On Linux hosts, set `LOCAL_UID`/`LOCAL_GID` (see `.env.example`) if your user
 is not UID/GID 1000, so files written by the container remain owned by you.
 
-### Owning the Windows cross toolchain
+### Reverting the Windows cross toolchain to a published image
 
-`docker/Dockerfile`'s `windows-mingw` stage defaults to a published
-`x86_64-w64-mingw32` GCC image, so its exact GCC version is whatever that
-image currently ships (it will not always match the `linux` stage's pinned
-GCC 16.1.0). To pin and fully own the cross toolchain instead, build the
-from-source alternative:
+`docker/Dockerfile`'s `windows-mingw` stage currently builds FROM the local
+`cpp26-vulkan-engine-mingw:17-trunk` image (see `docker/Dockerfile.mingw-from-source`),
+because the published `ghcr.io/nathan-baggs/custom-mingw64` image tracks a
+released GCC and GCC 17 has not released. That local image must exist before
+`docker compose build windows-mingw` can resolve the `FROM`; `make images`
+and the explicit `docker build -f docker/Dockerfile.mingw-from-source ...`
+command above both produce it.
 
-```bash
-docker build -f docker/Dockerfile.mingw-from-source -t cpp26-vulkan-engine-mingw:16.1 .
-```
-
-Then change `docker/Dockerfile`'s `windows-mingw` stage to:
+To go back to the published image instead -- e.g. to sidestep trunk risk,
+accepting whatever GCC 16.x that image currently ships -- change
+`docker/Dockerfile`'s `windows-mingw` stage back to:
 
 ```dockerfile
-FROM cpp26-vulkan-engine-mingw:16.1 AS windows-mingw
+FROM ghcr.io/nathan-baggs/custom-mingw64:latest AS windows-mingw
 ```
 
-and rebuild the compose image (`docker compose build windows-mingw`). This
-takes noticeably longer to build the first time, since it compiles binutils,
-MinGW-w64, and GCC from source rather than pulling a prebuilt layer.
+and rebuild the compose image (`docker compose build windows-mingw`). Once
+GCC 17 actually ships a numbered release, re-pin `GCC_SNAPSHOT` in both
+Dockerfiles to that release and drop "trunk" from the image tags. Separately,
+`Dockerfile.mingw-from-source`'s `MINGW_REF` tracks mingw-w64 master only
+because its `__stack_chk_guard` fix for GCC 17 hasn't reached a release
+either (see that file's header comment); re-pin `MINGW_REF` to a numbered
+mingw-w64 release once one includes the fix.
