@@ -4,7 +4,9 @@
 /shaders/generated/
 /assets/cooked/
 /generated/
-.vscode/
+.vscode/*
+!.vscode/launch.example.json
+!.vscode/tasks.example.json
 .idea/
 *.user
 *.suo

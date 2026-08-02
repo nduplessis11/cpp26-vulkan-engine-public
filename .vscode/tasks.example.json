@@ -1,0 +1,45 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "CMake: configure (linux-gcc-debug)",
+            "type": "shell",
+            "command": "cmake",
+            "args": ["--preset", "linux-gcc-debug"],
+            "problemMatcher": []
+        },
+        {
+            "label": "CMake: build (linux-gcc-debug)",
+            "type": "shell",
+            "command": "cmake",
+            "args": ["--build", "--preset", "linux-gcc-debug"],
+            "dependsOn": "CMake: configure (linux-gcc-debug)",
+            "group": { "kind": "build", "isDefault": true },
+            "problemMatcher": ["$gcc"]
+        },
+        {
+            "label": "CTest: run (linux-gcc-debug)",
+            "type": "shell",
+            "command": "ctest",
+            "args": ["--preset", "linux-gcc-debug"],
+            "dependsOn": "CMake: build (linux-gcc-debug)",
+            "group": { "kind": "test", "isDefault": true },
+            "problemMatcher": []
+        },
+        {
+            "label": "Docker: configure Windows (docker-windows-mingw-debug)",
+            "type": "shell",
+            "command": "docker",
+            "args": ["compose", "run", "--rm", "windows-mingw", "cmake", "--preset", "docker-windows-mingw-debug"],
+            "problemMatcher": []
+        },
+        {
+            "label": "Docker: build Windows (docker-windows-mingw-debug)",
+            "type": "shell",
+            "command": "docker",
+            "args": ["compose", "run", "--rm", "windows-mingw", "cmake", "--build", "--preset", "docker-windows-mingw-debug"],
+            "dependsOn": "Docker: configure Windows (docker-windows-mingw-debug)",
+            "problemMatcher": ["$gcc"]
+        }
+    ]
+}

@@ -25,6 +25,13 @@ ARG PREFIX=/usr/local
 ARG BINUTILS_VERSION=2.45
 ARG GCC_SNAPSHOT=17-20260727
 ARG MINGW_REF=master
+# Vulkan-Headers is header-only (no architecture-specific content), so a single tag
+# works for every target this image ever cross-compiles for. Pinned to a real,
+# published vulkan-sdk-sync tag rather than a moving branch. This provides only
+# #include <vulkan/vulkan.h> under the cross toolchain -- no Windows import library
+# and no vulkan-1.dll. Linking/loading strategy for the Windows cross build is a
+# separate, still-open decision (see docker/Dockerfile's windows-mingw stage).
+ARG VULKAN_HEADERS_REF=vulkan-sdk-1.4.357.0
 # Ubuntu 24.04's apt cmake package (3.28.x) predates GCC 16 in its per-compiler
 # C++ standard feature tables, so it rejects cxx_std_26 even though GCC 16
 # itself supports -std=c++26 fine. Pin a CMake release known to recognize it
@@ -161,6 +168,17 @@ RUN cd build-gcc \
     && ${TARGET}-g++ --version \
     && printf '#include <version>\nint main(){}\n' \
         | ${TARGET}-g++ -std=c++26 -x c++ - -c -o /tmp/cpp26-test.o \
-    && rm -rf /tmp/toolchain /tmp/cpp26-test.o
+    && rm -f /tmp/cpp26-test.o
+
+# Vendored last so bumping VULKAN_HEADERS_REF alone does not invalidate the
+# expensive binutils/mingw-crt/gcc layers above. Copied into the target sysroot
+# (not a generic host path) so CMAKE_FIND_ROOT_PATH_MODE_INCLUDE=ONLY resolves it.
+RUN curl --fail --location --retry 3 \
+        "https://github.com/KhronosGroup/Vulkan-Headers/archive/refs/tags/${VULKAN_HEADERS_REF}.tar.gz" \
+        --output vulkan-headers.tar.gz \
+    && tar -xzf vulkan-headers.tar.gz \
+    && cp -r Vulkan-Headers-*/include/vulkan ${PREFIX}/${TARGET}/include/ \
+    && cp -r Vulkan-Headers-*/include/vk_video ${PREFIX}/${TARGET}/include/ \
+    && rm -rf /tmp/toolchain
 
 WORKDIR /workspace

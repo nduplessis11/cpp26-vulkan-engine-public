@@ -12,8 +12,12 @@ list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 include(ProjectOptions)
 include(CompilerWarnings)
 include(Sanitizers)
+include(CompilerChecks)
+include(DebugDiagnostics)
+include(WindowsRuntime)
 
 engine_define_project_options()
+engine_validate_compiler()
 
 set(CMAKE_CXX_STANDARD 26)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -28,6 +32,8 @@ add_library(engine_project_warnings INTERFACE)
 add_library(engine::project_warnings ALIAS engine_project_warnings)
 engine_set_project_warnings(engine_project_warnings)
 engine_enable_sanitizers(engine_project_options)
+engine_enable_debug_diagnostics(engine_project_options)
+engine_enable_static_windows_runtime(engine_project_options)
 
 find_package(Vulkan 1.4 QUIET)
 
