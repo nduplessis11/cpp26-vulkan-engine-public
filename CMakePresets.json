@@ -65,6 +65,22 @@
       }
     },
     {
+      "name": "windows-gcc-debug",
+      "displayName": "Windows GCC Debug (MinGW)",
+      "inherits": "base",
+      "condition": {
+        "type": "equals",
+        "lhs": "${hostSystemName}",
+        "rhs": "Windows"
+      },
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "CMAKE_CXX_COMPILER": "g++",
+        "ENGINE_PLATFORM_BACKEND": "WIN32",
+        "ENGINE_ENABLE_SANITIZERS": false
+      }
+    },
+    {
       "name": "scaffold-no-vulkan",
       "displayName": "Scaffold structure check without Vulkan",
       "inherits": "base",
@@ -89,6 +105,10 @@
       "configurePreset": "windows-msvc-debug"
     },
     {
+      "name": "windows-gcc-debug",
+      "configurePreset": "windows-gcc-debug"
+    },
+    {
       "name": "scaffold-no-vulkan",
       "configurePreset": "scaffold-no-vulkan"
     }
@@ -111,6 +131,13 @@
     {
       "name": "windows-msvc-debug",
       "configurePreset": "windows-msvc-debug",
+      "output": {
+        "outputOnFailure": true
+      }
+    },
+    {
+      "name": "windows-gcc-debug",
+      "configurePreset": "windows-gcc-debug",
       "output": {
         "outputOnFailure": true
       }
