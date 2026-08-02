@@ -1,4 +1,4 @@
-.PHONY: images \
+.PHONY: images mingw-toolchain-image \
         configure-docker-linux build-docker-linux test-docker-linux \
         configure-docker-windows build-docker-windows \
         ccache-stats clean
@@ -7,7 +7,13 @@ LOCAL_UID := $(shell id -u 2>/dev/null || echo 1000)
 LOCAL_GID := $(shell id -g 2>/dev/null || echo 1000)
 COMPOSE := LOCAL_UID=$(LOCAL_UID) LOCAL_GID=$(LOCAL_GID) docker compose
 
-images:
+# docker/Dockerfile's windows-mingw stage builds FROM this tag. GCC 17 has
+# no published image, so unlike the old GCC 16 setup this base must be built
+# locally before compose can resolve it; see docs/BUILDING.md.
+mingw-toolchain-image:
+	docker build -f docker/Dockerfile.mingw-from-source -t cpp26-vulkan-engine-mingw:17-trunk .
+
+images: mingw-toolchain-image
 	$(COMPOSE) build linux windows-mingw
 
 configure-docker-linux:
