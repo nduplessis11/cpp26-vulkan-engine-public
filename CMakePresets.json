@@ -18,22 +18,6 @@
       }
     },
     {
-      "name": "linux-clang-debug",
-      "displayName": "Linux Clang Debug (Wayland-first)",
-      "inherits": "base",
-      "condition": {
-        "type": "equals",
-        "lhs": "${hostSystemName}",
-        "rhs": "Linux"
-      },
-      "cacheVariables": {
-        "CMAKE_BUILD_TYPE": "Debug",
-        "CMAKE_CXX_COMPILER": "clang++",
-        "ENGINE_PLATFORM_BACKEND": "WAYLAND",
-        "ENGINE_ENABLE_SANITIZERS": false
-      }
-    },
-    {
       "name": "linux-gcc-debug",
       "displayName": "Linux GCC Debug (Wayland-first)",
       "inherits": "base",
@@ -46,21 +30,6 @@
         "CMAKE_BUILD_TYPE": "Debug",
         "CMAKE_CXX_COMPILER": "g++",
         "ENGINE_PLATFORM_BACKEND": "WAYLAND",
-        "ENGINE_ENABLE_SANITIZERS": false
-      }
-    },
-    {
-      "name": "windows-msvc-debug",
-      "displayName": "Windows MSVC Debug",
-      "inherits": "base",
-      "condition": {
-        "type": "equals",
-        "lhs": "${hostSystemName}",
-        "rhs": "Windows"
-      },
-      "cacheVariables": {
-        "CMAKE_BUILD_TYPE": "Debug",
-        "ENGINE_PLATFORM_BACKEND": "WIN32",
         "ENGINE_ENABLE_SANITIZERS": false
       }
     },
@@ -89,20 +58,49 @@
         "ENGINE_PLATFORM_BACKEND": "HEADLESS",
         "ENGINE_REQUIRE_VULKAN_SDK": false
       }
+    },
+    {
+      "name": "docker-base",
+      "hidden": true,
+      "inherits": "base",
+      "condition": {
+        "type": "equals",
+        "lhs": "${hostSystemName}",
+        "rhs": "Linux"
+      },
+      "cacheVariables": {
+        "CMAKE_C_COMPILER_LAUNCHER": "ccache",
+        "CMAKE_CXX_COMPILER_LAUNCHER": "ccache"
+      }
+    },
+    {
+      "name": "docker-linux-gcc-debug",
+      "displayName": "Docker: Linux GCC Debug (Wayland-first)",
+      "inherits": "docker-base",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "CMAKE_CXX_COMPILER": "g++",
+        "ENGINE_PLATFORM_BACKEND": "WAYLAND",
+        "ENGINE_ENABLE_SANITIZERS": false
+      }
+    },
+    {
+      "name": "docker-windows-mingw-debug",
+      "displayName": "Docker: Windows MinGW cross-compile Debug (scaffold-only)",
+      "inherits": "docker-base",
+      "toolchainFile": "${sourceDir}/cmake/toolchains/mingw-x86_64.cmake",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "ENGINE_PLATFORM_BACKEND": "WIN32",
+        "ENGINE_ENABLE_SANITIZERS": false,
+        "ENGINE_REQUIRE_VULKAN_SDK": false
+      }
     }
   ],
   "buildPresets": [
     {
-      "name": "linux-clang-debug",
-      "configurePreset": "linux-clang-debug"
-    },
-    {
       "name": "linux-gcc-debug",
       "configurePreset": "linux-gcc-debug"
-    },
-    {
-      "name": "windows-msvc-debug",
-      "configurePreset": "windows-msvc-debug"
     },
     {
       "name": "windows-gcc-debug",
@@ -111,26 +109,20 @@
     {
       "name": "scaffold-no-vulkan",
       "configurePreset": "scaffold-no-vulkan"
+    },
+    {
+      "name": "docker-linux-gcc-debug",
+      "configurePreset": "docker-linux-gcc-debug"
+    },
+    {
+      "name": "docker-windows-mingw-debug",
+      "configurePreset": "docker-windows-mingw-debug"
     }
   ],
   "testPresets": [
     {
-      "name": "linux-clang-debug",
-      "configurePreset": "linux-clang-debug",
-      "output": {
-        "outputOnFailure": true
-      }
-    },
-    {
       "name": "linux-gcc-debug",
       "configurePreset": "linux-gcc-debug",
-      "output": {
-        "outputOnFailure": true
-      }
-    },
-    {
-      "name": "windows-msvc-debug",
-      "configurePreset": "windows-msvc-debug",
       "output": {
         "outputOnFailure": true
       }
@@ -145,6 +137,13 @@
     {
       "name": "scaffold-no-vulkan",
       "configurePreset": "scaffold-no-vulkan",
+      "output": {
+        "outputOnFailure": true
+      }
+    },
+    {
+      "name": "docker-linux-gcc-debug",
+      "configurePreset": "docker-linux-gcc-debug",
       "output": {
         "outputOnFailure": true
       }
