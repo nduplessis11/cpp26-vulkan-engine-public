@@ -1,0 +1,38 @@
+name: cpp26-vulkan-engine
+
+services:
+  linux:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+      target: linux
+    image: cpp26-vulkan-engine-linux:16.1
+    working_dir: /workspace
+    user: "${LOCAL_UID:-1000}:${LOCAL_GID:-1000}"
+    environment:
+      HOME: /tmp
+      CCACHE_DIR: /ccache
+      CCACHE_MAXSIZE: 20G
+    volumes:
+      - .:/workspace
+      - ccache-linux:/ccache
+
+  windows-mingw:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+      target: windows-mingw
+    image: cpp26-vulkan-engine-windows-mingw:latest
+    working_dir: /workspace
+    user: "${LOCAL_UID:-1000}:${LOCAL_GID:-1000}"
+    environment:
+      HOME: /tmp
+      CCACHE_DIR: /ccache
+      CCACHE_MAXSIZE: 20G
+    volumes:
+      - .:/workspace
+      - ccache-windows-mingw:/ccache
+
+volumes:
+  ccache-linux:
+  ccache-windows-mingw:

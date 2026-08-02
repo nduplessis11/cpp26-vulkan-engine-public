@@ -1,0 +1,150 @@
+# syntax=docker/dockerfile:1.7
+# Builds a reproducible Linux-hosted GCC 16.1.0 / MinGW-w64 14.0.0 cross
+# toolchain. This follows the same bootstrap sequence as the published
+# ghcr.io/nathan-baggs/custom-mingw64 image (binutils, mingw headers, gcc
+# stage 1, mingw crt + winpthreads, gcc stage 2) but pins released source
+# tarballs instead of tracking trunk, so the toolchain version stops moving
+# under you. Optional: docker/Dockerfile's windows-mingw stage uses the
+# published image by default; point it at this one instead when the
+# version drift between the two containers' GCC needs to be pinned down.
+FROM ubuntu:24.04
+
+ARG TARGET=x86_64-w64-mingw32
+ARG PREFIX=/usr/local
+ARG BINUTILS_VERSION=2.45
+ARG GCC_VERSION=16.1.0
+ARG MINGW_VERSION=14.0.0
+# Ubuntu 24.04's apt cmake package (3.28.x) predates GCC 16 in its per-compiler
+# C++ standard feature tables, so it rejects cxx_std_26 even though GCC 16
+# itself supports -std=c++26 fine. Pin a CMake release known to recognize it
+# (the same version the linux stage's Debian trixie apt package resolves to)
+# instead of trusting whatever the base distro currently ships.
+ARG CMAKE_VERSION=3.31.6
+
+ENV PATH=${PREFIX}/bin:${PATH} \
+    CCACHE_DIR=/ccache \
+    CCACHE_MAXSIZE=20G \
+    HOME=/tmp
+
+RUN apt-get update \
+    && DEBIAN_FRONTEND=noninteractive apt-get install --no-install-recommends -y \
+        bison \
+        build-essential \
+        bzip2 \
+        ca-certificates \
+        ccache \
+        curl \
+        file \
+        flex \
+        gperf \
+        git \
+        libgmp-dev \
+        libisl-dev \
+        libmpc-dev \
+        libmpfr-dev \
+        libzstd-dev \
+        make \
+        ninja-build \
+        patch \
+        pkg-config \
+        python3 \
+        texinfo \
+        wget \
+        xz-utils \
+        zlib1g-dev \
+    && rm -rf /var/lib/apt/lists/* \
+    && mkdir -p /tmp/toolchain /workspace /ccache \
+    && chmod 0777 /workspace /ccache
+
+RUN curl --fail --location --retry 3 \
+        "https://github.com/Kitware/CMake/releases/download/v${CMAKE_VERSION}/cmake-${CMAKE_VERSION}-linux-x86_64.tar.gz" \
+        --output /tmp/cmake.tar.gz \
+    && tar -xzf /tmp/cmake.tar.gz -C ${PREFIX} --strip-components=1 \
+    && rm /tmp/cmake.tar.gz \
+    && cmake --version
+
+WORKDIR /tmp/toolchain
+
+RUN curl --fail --location --retry 3 \
+        "https://ftp.gnu.org/gnu/binutils/binutils-${BINUTILS_VERSION}.tar.xz" \
+        --output binutils.tar.xz \
+    && tar -xf binutils.tar.xz \
+    && mkdir build-binutils \
+    && cd build-binutils \
+    && ../binutils-${BINUTILS_VERSION}/configure \
+        --prefix=${PREFIX} \
+        --target=${TARGET} \
+        --disable-multilib \
+        --disable-lto \
+        --disable-plugins \
+        --disable-nls \
+        --disable-werror \
+        --with-system-zlib \
+    && make -j"$(nproc)" \
+    && make install
+
+RUN curl --fail --location --retry 3 \
+        "https://sourceforge.net/projects/mingw-w64/files/mingw-w64/mingw-w64-release/mingw-w64-v${MINGW_VERSION}.tar.bz2/download" \
+        --output mingw-w64.tar.bz2 \
+    && tar -xf mingw-w64.tar.bz2 \
+    && mkdir build-mingw-headers \
+    && cd build-mingw-headers \
+    && ../mingw-w64-v${MINGW_VERSION}/mingw-w64-headers/configure \
+        --prefix=${PREFIX}/${TARGET} \
+        --host=${TARGET} \
+        --enable-sdk=all \
+    && make -j"$(nproc)" \
+    && make install
+
+RUN curl --fail --location --retry 3 \
+        "https://ftp.gnu.org/gnu/gcc/gcc-${GCC_VERSION}/gcc-${GCC_VERSION}.tar.xz" \
+        --output gcc.tar.xz \
+    && tar -xf gcc.tar.xz \
+    && mkdir build-gcc \
+    && cd build-gcc \
+    && ../gcc-${GCC_VERSION}/configure \
+        --prefix=${PREFIX} \
+        --target=${TARGET} \
+        --enable-languages=c,c++ \
+        --enable-threads=posix \
+        --disable-multilib \
+        --disable-lto \
+        --disable-nls \
+        --disable-shared \
+        --enable-static \
+        --disable-werror \
+        --disable-libstdcxx-pch \
+        --with-system-zlib \
+    && make -j"$(nproc)" all-gcc \
+    && make install-gcc
+
+RUN mkdir build-mingw-crt \
+    && cd build-mingw-crt \
+    && ../mingw-w64-v${MINGW_VERSION}/mingw-w64-crt/configure \
+        --prefix=${PREFIX}/${TARGET} \
+        --host=${TARGET} \
+        --disable-lib32 \
+        --enable-lib64 \
+        --enable-wildcard \
+    && (make -j"$(nproc)" || make -j1) \
+    && make install
+
+RUN mkdir build-winpthreads \
+    && cd build-winpthreads \
+    && ../mingw-w64-v${MINGW_VERSION}/mingw-w64-libraries/winpthreads/configure \
+        --prefix=${PREFIX}/${TARGET} \
+        --host=${TARGET} \
+        --disable-shared \
+        --enable-static \
+    && make -j"$(nproc)" \
+    && make install
+
+RUN cd build-gcc \
+    && make -j"$(nproc)" \
+    && make install \
+    && ${TARGET}-g++ --version \
+    && printf '#include <version>\nint main(){}\n' \
+        | ${TARGET}-g++ -std=c++26 -x c++ - -c -o /tmp/cpp26-test.o \
+    && rm -rf /tmp/toolchain /tmp/cpp26-test.o
+
+WORKDIR /workspace

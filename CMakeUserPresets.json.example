@@ -4,7 +4,7 @@
   "configurePresets": [
     {
       "name": "my-linux-debug",
-      "inherits": "linux-clang-debug",
+      "inherits": "linux-gcc-debug",
       "cacheVariables": {
         "CMAKE_CXX_COMPILER": "/absolute/path/to/clang++"
       }
