@@ -3,8 +3,18 @@
         configure-docker-windows build-docker-windows \
         ccache-stats clean
 
+# Under Windows Git Bash/MSYS, `id -u` reports a Windows-mapped UID that Docker
+# Desktop's bind mount does not recognize, and using it fails container writes with
+# a permission-denied error. compose.yaml's own 1000:1000 default already matches
+# what Docker Desktop's Windows file sharing expects, so skip id -u there entirely.
+UNAME_S := $(shell uname -s 2>/dev/null)
+ifneq (,$(findstring MINGW,$(UNAME_S))$(findstring MSYS,$(UNAME_S)))
+LOCAL_UID := 1000
+LOCAL_GID := 1000
+else
 LOCAL_UID := $(shell id -u 2>/dev/null || echo 1000)
 LOCAL_GID := $(shell id -g 2>/dev/null || echo 1000)
+endif
 COMPOSE := LOCAL_UID=$(LOCAL_UID) LOCAL_GID=$(LOCAL_GID) docker compose
 
 # docker/Dockerfile's windows-mingw stage builds FROM this tag. GCC 17 has

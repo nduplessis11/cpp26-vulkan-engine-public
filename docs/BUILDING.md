@@ -23,13 +23,28 @@ ctest --preset linux-gcc-debug
 
 ## Windows
 
-Use a current MSYS2 MinGW shell, then:
+The canonical Windows path cross-compiles in Docker on Linux, then runs and debugs the
+resulting `.exe` directly on Windows -- see "Docker (containerized builds)" below for the
+exact commands. Docker is the build environment here, not where you run or debug.
+
+The produced `.exe` statically links its MinGW runtime (`-static -static-libgcc
+-static-libstdc++`, via `cmake/WindowsRuntime.cmake`), so it depends only on core Windows
+DLLs and there is nothing to stage next to it.
+
+### Alternative: native MSYS2 build
+
+If you already have a working MSYS2 MinGW GCC 17 environment and prefer to build directly
+on Windows without Docker:
 
 ```powershell
 cmake --preset windows-gcc-debug
 cmake --build --preset windows-gcc-debug
 ctest --preset windows-gcc-debug
 ```
+
+This preset is a fallback, not the primary path: keeping a GCC 17 trunk snapshot working
+through MSYS2 is on you to maintain, versus the Docker path's pinned, reproducible
+toolchain.
 
 ## Scaffold-only inspection
 
@@ -40,6 +55,21 @@ ctest --preset scaffold-no-vulkan
 ```
 
 This does not satisfy lesson 000.
+
+## Debug build diagnostics
+
+Every project-owned target (via `engine::project_options`) picks up two configure-time
+safeguards, added by `cmake/DebugDiagnostics.cmake` and `cmake/CompilerChecks.cmake`:
+
+- **Debug flags.** CMake's own `Debug` config only guarantees a bare `-g` for GCC. Debug
+  configures now also apply `-Og -g3 -fno-omit-frame-pointer` (GCC/MinGW only) so stepping,
+  local-variable inspection, and backtraces stay reliable. Look for these flags in a
+  verbose build (`cmake --build --preset linux-gcc-debug -- -v`) to confirm they landed.
+- **Compiler identity check.** Configure fails immediately with `FATAL_ERROR` if
+  `CMAKE_CXX_COMPILER_ID` isn't `GNU`, or if a Windows cross-compile preset resolves a
+  compiler that isn't the `x86_64-w64-mingw32` toolchain. The configure log also prints
+  the resolved compiler identity and version (`Compiler identity check passed: ...`) so
+  you can confirm which GCC you actually built with.
 
 ## Docker (containerized builds)
 
@@ -83,14 +113,22 @@ toolchain bootstrap take noticeably longer than pulling a prebuilt image did
 -- this is a one-time cost per Docker layer cache, not a per-build cost.
 
 The `docker-windows-mingw-debug` preset builds scaffold-only
-(`ENGINE_REQUIRE_VULKAN_SDK=OFF`): the Linux container has no Windows Vulkan
-SDK import library, so this preset does not link Vulkan yet. It exists to
-prove the cross-compiler and CMake wiring; a later lesson decides how the
-engine loads Vulkan for cross-compiled Windows builds. `docker-linux-gcc-debug`
+(`ENGINE_REQUIRE_VULKAN_SDK=OFF`): `Dockerfile.mingw-from-source` vendors
+Vulkan-Headers into the cross sysroot (so `<vulkan/vulkan.h>` compiles), but there
+is still no Windows Vulkan import library or `vulkan-1.dll`, so this preset does
+not link Vulkan yet. It exists to prove the cross-compiler and CMake wiring; a
+later lesson decides how the engine loads Vulkan for cross-compiled Windows
+builds (most likely `LoadLibrary` + `vkGetInstanceProcAddr` rather than
+link-time, since that needs no import library at all). `docker-linux-gcc-debug`
 installs a real Vulkan loader and links normally.
 
 On Linux hosts, set `LOCAL_UID`/`LOCAL_GID` (see `.env.example`) if your user
-is not UID/GID 1000, so files written by the container remain owned by you.
+is not UID/GID 1000, so files written by the container remain owned by you. On
+Windows hosts, leave them unset: `compose.yaml` defaults to `1000:1000`, which
+is what Docker Desktop's bind mount expects, and the `Makefile` detects a
+Windows shell (MSYS/MinGW `uname`) and skips its `id -u`-based override for the
+same reason -- that override reports a Windows-mapped UID Docker Desktop does
+not recognize, which fails with a permission-denied error on configure.
 
 ### Reverting the Windows cross toolchain to a published image
 

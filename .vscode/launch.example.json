@@ -1,0 +1,59 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Engine — Linux GCC Debug",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/out/build/linux-gcc-debug/apps/sandbox/engine_sandbox",
+            "args": [],
+            "environment": [],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
+            "externalConsole": false,
+            "MIMode": "gdb",
+            "preLaunchTask": "CMake: build (linux-gcc-debug)",
+            "setupCommands": [
+                {
+                    "description": "Enable libstdc++ pretty-printing",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                },
+                {
+                    "description": "Allow breakpoints in not-yet-loaded code",
+                    "text": "-gdb-set breakpoint pending on",
+                    "ignoreFailures": true
+                }
+            ]
+        },
+        {
+            "name": "Engine — Windows MinGW Debug",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/out/build/docker-windows-mingw-debug/apps/sandbox/engine_sandbox.exe",
+            "args": [],
+            "environment": [],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
+            "externalConsole": true,
+            "MIMode": "gdb",
+            "miDebuggerPath": "${env:ENGINE_MINGW_GDB}",
+            "preLaunchTask": "Docker: build Windows (docker-windows-mingw-debug)",
+            "sourceFileMap": {
+                "/workspace": "${workspaceFolder}"
+            },
+            "setupCommands": [
+                {
+                    "description": "Enable libstdc++ pretty-printing",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                },
+                {
+                    "description": "Allow breakpoints in not-yet-loaded code",
+                    "text": "-gdb-set breakpoint pending on",
+                    "ignoreFailures": true
+                }
+            ]
+        }
+    ]
+}

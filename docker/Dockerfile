@@ -131,10 +131,11 @@ WORKDIR /workspace
 # toolchain running on Linux. The published ghcr.io/nathan-baggs/custom-
 # mingw64 image tracks a released GCC, so it cannot provide GCC 17 either --
 # this stage always builds from docker/Dockerfile.mingw-from-source instead
-# of falling back to a prebuilt image (see docs/BUILDING.md). The engine has
-# no Windows Vulkan SDK import library here, so the docker-windows-mingw-
-# debug preset builds scaffold-only (ENGINE_REQUIRE_VULKAN_SDK=OFF) until a
-# lesson decides the Vulkan loading strategy for cross builds.
+# of falling back to a prebuilt image (see docs/BUILDING.md). That image vendors
+# Vulkan-Headers into the target sysroot, so <vulkan/vulkan.h> compiles here, but
+# there is still no Windows Vulkan import library or vulkan-1.dll -- the
+# docker-windows-mingw-debug preset builds scaffold-only (ENGINE_REQUIRE_VULKAN_SDK=OFF)
+# until a lesson decides the Vulkan linking/loading strategy for cross builds.
 FROM cpp26-vulkan-engine-mingw:17-trunk AS windows-mingw
 
 RUN apt-get update \
