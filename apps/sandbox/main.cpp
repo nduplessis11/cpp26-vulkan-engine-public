@@ -21,6 +21,11 @@ int main() {
     std::cout << "Vulkan 1.4 SDK: not found (scaffold-only configuration)\n";
 #endif
 
-    std::cout << "Current lesson: 000 - bootstrap the build. No engine is implemented yet.\n";
+    std::cout << "Current lesson: 001 - make warnings and diagnostics intentional.\n";
+
+    // TODO(human): write 2-3 lines that deliberately trip ONE warning from the
+    // project policy in cmake/CompilerWarnings.cmake. Predict the flag and the
+    // message before you build. This code is temporary and comes back out.
+
     return EXIT_SUCCESS;
 }
