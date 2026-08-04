@@ -1,0 +1,32 @@
+[
+  {
+    "label": "Engine — Linux GCC Debug",
+    "adapter": "GDB",
+    "request": "launch",
+    "program": "$ZED_WORKTREE_ROOT/out/build/linux-gcc-debug/apps/sandbox/engine_sandbox",
+    "cwd": "$ZED_WORKTREE_ROOT",
+    "gdb_args": ["-ex", "set breakpoint pending on"],
+    "build": {
+      "command": "cmake",
+      "args": ["--build", "--preset", "linux-gcc-debug"],
+      "cwd": "$ZED_WORKTREE_ROOT"
+    }
+  },
+  {
+    "label": "Engine — Windows MinGW Debug",
+    "adapter": "GDB",
+    "request": "launch",
+    "program": "$ZED_WORKTREE_ROOT/out/build/docker-windows-mingw-debug/apps/sandbox/engine_sandbox.exe",
+    "cwd": "$ZED_WORKTREE_ROOT",
+    "gdb_path": "C:/mingw64/bin/gdb.exe",
+    "gdb_args": [
+      "-ex", "set breakpoint pending on",
+      "-ex", "set substitute-path /workspace $ZED_WORKTREE_ROOT"
+    ],
+    "build": {
+      "command": "docker",
+      "args": ["compose", "run", "--rm", "windows-mingw", "cmake", "--build", "--preset", "docker-windows-mingw-debug"],
+      "cwd": "$ZED_WORKTREE_ROOT"
+    }
+  }
+]

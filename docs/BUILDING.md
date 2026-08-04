@@ -70,6 +70,14 @@ safeguards, added by `cmake/DebugDiagnostics.cmake` and `cmake/CompilerChecks.cm
   compiler that isn't the `x86_64-w64-mingw32` toolchain. The configure log also prints
   the resolved compiler identity and version (`Compiler identity check passed: ...`) so
   you can confirm which GCC you actually built with.
+- **Contracts preview.** `ENGINE_ENABLE_CONTRACTS` (default `ON`, see
+  `cmake/Contracts.cmake`) probes for GCC's experimental `-fcontracts` support
+  (`check_cxx_compiler_flag`) and, if accepted, adds it to Debug builds only, so
+  `pre()`/`post()`/`contract_assert()` are live. If the resolved compiler doesn't accept
+  the flag (e.g. a GCC predating the 16.1 preview), configure prints a `WARNING` and
+  skips it rather than failing. Turn it off with `-DENGINE_ENABLE_CONTRACTS=OFF`. See
+  `curriculum/lectures/002_choose-error-and-contract-conventions.md` for why this is
+  still opt-in-by-flag rather than a standardized language feature.
 
 ## Docker (containerized builds)
 

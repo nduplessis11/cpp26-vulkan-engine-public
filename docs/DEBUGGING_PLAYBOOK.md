@@ -121,3 +121,35 @@ line 12 — GDB lands on the first line with its own instruction, one past line 
 declaration-only statement, same as the Linux proof), showed a correct backtrace with
 `No locals` at that point, then resumed and produced the expected scaffold output — with
 no container involved at any point after the build.
+
+## GDB / Zed
+
+Zed (1.13+) ships a built-in debugger that talks to GDB directly — no separate
+extension needed. Configurations live in `.zed/debug.json`, gitignored the same way
+`.vscode/launch.json` is; copy `.zed/debug.example.json` to `.zed/debug.json` for your
+personal copy, then open the Debug panel, pick "Engine — Linux GCC Debug" or "Engine —
+Windows MinGW Debug", set a breakpoint, and start the session.
+
+Each configuration's `build` step runs the same incremental build command as its VS
+Code counterpart (see above), not a full reconfigure — run the configure step from the
+command line once first.
+
+**Windows: `gdb_path` needs a literal, host-specific path.** Unlike VS Code's
+`${env:ENGINE_MINGW_GDB}`, Zed does not expand OS environment variables inside
+`debug.json` (an open upstream limitation as of 1.13). Edit `gdb_path` in your local
+copy directly instead of relying on the `ENGINE_MINGW_GDB` env var from the VS Code
+section above. The example ships with the same path verified there
+(`C:/mingw64/bin/gdb.exe`, GDB 16.3) — edit it if yours lives elsewhere.
+
+**Windows: source-path remap.** Same `/workspace`-vs.-real-repo-path problem as the VS
+Code entry (see above) — there's no dedicated `sourceFileMap`-style field, so the
+example does the remap the way plain GDB does, via `gdb_args`: `-ex "set
+substitute-path /workspace $ZED_WORKTREE_ROOT"`.
+
+**Unverified end-to-end.** `.zed/debug.example.json` was checked against Zed's
+documented `debug.json` schema and is valid JSON, but this environment can't drive
+Zed's GUI debug panel, so no session was actually launched from here the way the
+Windows VS Code config above was. If breakpoints don't bind, libstdc++ pretty-printing
+doesn't kick in, or `gdb_args` behaves differently than expected, that's the first
+place to look — Zed's GDB adapter is newer and thinner than VS Code's cpptools
+integration, with open upstream issues around environment/argument handling.
