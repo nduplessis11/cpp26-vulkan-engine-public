@@ -114,11 +114,40 @@ docker compose run --rm windows-mingw cmake --build --preset docker-windows-ming
 ```
 
 The equivalent `make images`, `make build-docker-linux`,
-`make test-docker-linux`, and `make build-docker-windows` targets wrap the
-same commands; `make images` already builds the mingw toolchain image first.
+`make test-docker-linux`, `make build-docker-windows`, and
+`make run-scratchpad` targets wrap the same commands; `make images` already
+builds the mingw toolchain image first.
 Both the native GCC 17 bootstrap (`linux-gcc-builder` stage) and the cross
 toolchain bootstrap take noticeably longer than pulling a prebuilt image did
 -- this is a one-time cost per Docker layer cache, not a per-build cost.
+
+### Scratchpad (throwaway experiments)
+
+`apps/scratchpad` is a personal syntax/idea sandbox. It links only
+`engine::project_options` and `engine::project_warnings`, never
+`engine::runtime`, so it compiles without touching the engine build graph:
+
+```bash
+make run-scratchpad
+```
+
+That configures if needed, builds `--target engine_scratchpad` alone (two
+compile steps, not the whole tree), and runs the binary in the `linux`
+container. `make build-scratchpad` stops after the build. The raw form is:
+
+```bash
+docker compose run --rm linux cmake --build --preset docker-linux-gcc-debug --target engine_scratchpad
+docker compose run --rm linux ./out/build/docker-linux-gcc-debug/apps/scratchpad/engine_scratchpad
+```
+
+Run it **inside** the container. The binary links the image's from-source GCC 17
+libstdc++, which is typically newer than the host's, so running it on the host
+fails with a `GLIBCXX_... not found` loader error.
+
+Because `engine::project_options` carries `-fcontracts` in Debug (see
+`cmake/Contracts.cmake`), `pre()`, `post()`, and `contract_assert()` are live
+in the scratchpad -- useful for trying contract and `std::expected` shapes
+before committing to them in engine code.
 
 The `docker-windows-mingw-debug` preset builds scaffold-only
 (`ENGINE_REQUIRE_VULKAN_SDK=OFF`): `Dockerfile.mingw-from-source` vendors
