@@ -36,17 +36,18 @@ build-docker-linux: configure-docker-linux
 test-docker-linux: build-docker-linux
 	$(COMPOSE) run --rm linux ctest --preset docker-linux-gcc-debug
 
-# apps/scratchpad links only engine::project_options/warnings, never engine::runtime,
-# so --target engine_scratchpad builds two files instead of the whole graph. Run it in
+# apps/scratchpad links engine::runtime, which is header-only (INTERFACE), so
+# --target engine_scratchpad still builds two files instead of the whole graph. Run it in
 # the container, not on the host: it links the image's from-source GCC 17 libstdc++,
 # which is newer than a typical host's (GLIBCXX version error otherwise).
+# Pass arguments through with ARGS, e.g. `make run-scratchpad ARGS=trip-assert`.
 SCRATCHPAD_BIN := ./out/build/docker-linux-gcc-debug/apps/scratchpad/engine_scratchpad
 
 build-scratchpad: configure-docker-linux
 	$(COMPOSE) run --rm linux cmake --build --preset docker-linux-gcc-debug --target engine_scratchpad
 
 run-scratchpad: build-scratchpad
-	$(COMPOSE) run --rm linux $(SCRATCHPAD_BIN)
+	$(COMPOSE) run --rm linux $(SCRATCHPAD_BIN) $(ARGS)
 
 configure-docker-windows:
 	$(COMPOSE) run --rm windows-mingw cmake --preset docker-windows-mingw-debug

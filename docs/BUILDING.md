@@ -123,12 +123,15 @@ toolchain bootstrap take noticeably longer than pulling a prebuilt image did
 
 ### Scratchpad (throwaway experiments)
 
-`apps/scratchpad` is a personal syntax/idea sandbox. It links only
-`engine::project_options` and `engine::project_warnings`, never
-`engine::runtime`, so it compiles without touching the engine build graph:
+`apps/scratchpad` is a personal syntax/idea sandbox. It links
+`engine::project_options`, `engine::project_warnings`, and `engine::runtime`.
+Because `engine::runtime` is header-only (`INTERFACE`), that last one only adds
+`engine/include` to the include path -- it compiles nothing, so the scratchpad
+can exercise real engine headers while still building in two compile steps:
 
 ```bash
 make run-scratchpad
+make run-scratchpad ARGS=trip-assert   # pass arguments to the binary
 ```
 
 That configures if needed, builds `--target engine_scratchpad` alone (two
@@ -139,6 +142,10 @@ container. `make build-scratchpad` stops after the build. The raw form is:
 docker compose run --rm linux cmake --build --preset docker-linux-gcc-debug --target engine_scratchpad
 docker compose run --rm linux ./out/build/docker-linux-gcc-debug/apps/scratchpad/engine_scratchpad
 ```
+
+The dependency runs one way only: scratchpad -> engine. Nothing under `engine/`
+or `tests/` may depend on `engine_scratchpad`, and a lesson's acceptance
+evidence belongs in `tests/`, never here.
 
 Run it **inside** the container. The binary links the image's from-source GCC 17
 libstdc++, which is typically newer than the host's, so running it on the host

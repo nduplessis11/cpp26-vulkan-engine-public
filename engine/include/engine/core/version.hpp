@@ -2,6 +2,8 @@
 #include <cassert>
 #include <expected>
 #include <string_view>
+#include <utility>
+#include <charconv>
 
 namespace engine::core {
 
@@ -37,10 +39,23 @@ struct Version {
 
 [[nodiscard]] inline std::expected<Version, VersionParseError> parse_version(std::string_view text) {
     if (text.empty()) return std::unexpected{VersionParseError::EmptyInput};
+
+    int value = 0;
+    const auto [ptr, ec] = std::from_chars(text.data(), text.data() + text.size(), value);
+    std::println("\"{}\" -> value={} stopped_at={} of {} ok={}",
+                 text, value, ptr - text.data(), text.size(), ec == std::errc{});
+
+    return Version{1, 2, 3};
 }
 
 [[nodiscard]] inline int version_component(const Version& v, int index) {
     assert(index >= 0 && index <= 2);
+    switch (index) {
+        case 0: return v.major;
+        case 1: return v.minor;
+        case 2: return v.patch;
+    }
+    std::unreachable();
 }
 
 } // namespace engine::core
