@@ -40,7 +40,7 @@ test-docker-linux: build-docker-linux
 # --target engine_scratchpad still builds two files instead of the whole graph. Run it in
 # the container, not on the host: it links the image's from-source GCC 17 libstdc++,
 # which is newer than a typical host's (GLIBCXX version error otherwise).
-# Pass arguments through with ARGS, e.g. `make run-scratchpad ARGS=trip-assert`.
+# Pass arguments through with ARGS, e.g. `make run-scratchpad ARGS="--verbose 3"`.
 SCRATCHPAD_BIN := ./out/build/docker-linux-gcc-debug/apps/scratchpad/engine_scratchpad
 
 build-scratchpad: configure-docker-linux

@@ -4,6 +4,8 @@
 #include <string_view>
 #include <utility>
 #include <charconv>
+#include <print> // only for the debug trace in parse_version below; drop both together
+#include <array>
 
 namespace engine::core {
 
@@ -18,7 +20,8 @@ struct Version {
     int patch;
 };
 
-// TODO(human): implement parse_version and version_component below, per
+// NEXT (once the tests in tests/unit/version_test.cpp are red): implement
+// parse_version below, per
 // curriculum/design-notes/002_choose-error-and-contract-conventions.md.
 //
 // parse_version(""): VersionParseError::EmptyInput. Anything that isn't
@@ -40,15 +43,30 @@ struct Version {
 [[nodiscard]] inline std::expected<Version, VersionParseError> parse_version(std::string_view text) {
     if (text.empty()) return std::unexpected{VersionParseError::EmptyInput};
 
-    int value = 0;
-    const auto [ptr, ec] = std::from_chars(text.data(), text.data() + text.size(), value);
-    std::println("\"{}\" -> value={} stopped_at={} of {} ok={}",
-                 text, value, ptr - text.data(), text.size(), ec == std::errc{});
+    char const* const last = text.data() + text.size();
+    char const* cursor = text.data();
+    std::array<int, 3> parts{};
+
+    // Loop invariant: at top of each iteration, cursor points at the first character of the next component.
+    for (std::size_t i = 0; i < parts.size(); ++i) {
+        const auto [ptr, ec] = std::from_chars(cursor, last, parts[i]);
+        std::println("\"{}\" -> value={} stopped_at={} of {} ok={}",
+                     text, parts[i], ptr - text.data(), text.size(), ec == std::errc{});
+
+        if (i < 2) {
+
+        }
+    }
+
+    // int value = 0;
+    // const auto [ptr, ec] = std::from_chars(text.data(), text.data() + text.size(), value);
+    // std::println("\"{}\" -> value={} stopped_at={} of {} ok={}",
+    //              text, value, ptr - text.data(), text.size(), ec == std::errc{});
 
     return Version{1, 2, 3};
 }
 
-[[nodiscard]] inline int version_component(const Version& v, int index) {
+[[nodiscard]] inline int version_component(Version const& v, int index) {
     assert(index >= 0 && index <= 2);
     switch (index) {
         case 0: return v.major;

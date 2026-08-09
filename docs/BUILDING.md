@@ -131,7 +131,7 @@ can exercise real engine headers while still building in two compile steps:
 
 ```bash
 make run-scratchpad
-make run-scratchpad ARGS=trip-assert   # pass arguments to the binary
+make run-scratchpad ARGS="--verbose 3"   # pass arguments to the binary
 ```
 
 That configures if needed, builds `--target engine_scratchpad` alone (two
