@@ -4,7 +4,6 @@
 #include <string_view>
 #include <utility>
 #include <charconv>
-#include <print> // only for the debug trace in parse_version below; drop both together
 #include <array>
 
 namespace engine::core {
@@ -15,25 +14,19 @@ enum class VersionParseError {
 };
 
 struct Version {
-    int major;
-    int minor;
-    int patch;
+    unsigned int major;
+    unsigned int minor;
+    unsigned int patch;
+
+    // Equality only, on purpose. A defaulted <=> would compare major, then
+    // minor, then patch -- correct for semver precedence today only because the
+    // field order happens to match. Adding a pre-release field later would make
+    // the defaulted ordering silently wrong ("" sorts before "alpha", but semver
+    // ranks 1.0.0-alpha *below* 1.0.0), with no compile error to catch it.
+    // Nothing needs ordering yet; adding <=> later is not a breaking change.
+    friend bool operator==(Version const&, Version const&) = default;
 };
 
-// NEXT (once the tests in tests/unit/version_test.cpp are red): implement
-// parse_version below, per
-// curriculum/design-notes/002_choose-error-and-contract-conventions.md.
-//
-// parse_version(""): VersionParseError::EmptyInput. Anything that isn't
-// exactly three dot-separated non-negative integers, no extra characters or
-// whitespace ("1.2", "1.2.3.4", "1.2.x", " 1.2.3"): MalformedVersion.
-// "1.2.3": Version{1, 2, 3}.
-//
-// version_component: assert(index >= 0 && index <= 2) -- an out-of-range
-// index is always a caller bug (this type only has 3 fields), never a
-// real-world condition to hand back to a caller. Return the matching
-// major/minor/patch field for index 0/1/2.
-//
 // Both need a real definition here, marked `inline` -- engine::runtime is a
 // header-only INTERFACE target (see engine/CMakeLists.txt), so a
 // non-inline free-function definition pulled in by two translation units
@@ -45,28 +38,31 @@ struct Version {
 
     char const* const last = text.data() + text.size();
     char const* cursor = text.data();
-    std::array<int, 3> parts{};
+    std::array<unsigned int, 3> parts{};
 
     // Loop invariant: at top of each iteration, cursor points at the first character of the next component.
     for (std::size_t i = 0; i < parts.size(); ++i) {
         const auto [ptr, ec] = std::from_chars(cursor, last, parts[i]);
-        std::println("\"{}\" -> value={} stopped_at={} of {} ok={}",
-                     text, parts[i], ptr - text.data(), text.size(), ec == std::errc{});
+
+        if (ec != std::errc{}) {
+            return std::unexpected{VersionParseError::MalformedVersion};
+        }
+        if (i == 2 && ptr != last) {
+            return std::unexpected{VersionParseError::MalformedVersion};
+        }
+        if (i < 2 && (ptr == last || *ptr != '.')) {
+            return std::unexpected{VersionParseError::MalformedVersion};
+        }
 
         if (i < 2) {
-
+            cursor = ptr + 1;
         }
     }
 
-    // int value = 0;
-    // const auto [ptr, ec] = std::from_chars(text.data(), text.data() + text.size(), value);
-    // std::println("\"{}\" -> value={} stopped_at={} of {} ok={}",
-    //              text, value, ptr - text.data(), text.size(), ec == std::errc{});
-
-    return Version{1, 2, 3};
+    return Version{parts[0], parts[1], parts[2]};
 }
 
-[[nodiscard]] inline int version_component(Version const& v, int index) {
+[[nodiscard]] inline unsigned int version_component(Version const& v, int index) {
     assert(index >= 0 && index <= 2);
     switch (index) {
         case 0: return v.major;

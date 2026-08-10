@@ -2,17 +2,20 @@ add_executable(engine_scaffold_smoke smoke/scaffold_smoke.cpp)
 target_link_libraries(engine_scaffold_smoke PRIVATE engine::runtime)
 add_test(NAME engine.scaffold.smoke COMMAND engine_scaffold_smoke)
 
-# engine::runtime is an INTERFACE target that already carries engine::project_options
-# and engine::project_warnings (see engine/CMakeLists.txt), so linking it alone brings
-# the standard, warning, contract, and stdc++exp-for-std::print flags with it.
-add_executable(engine_version_test unit/version_test.cpp)
-target_link_libraries(engine_version_test PRIVATE engine::runtime)
-add_test(NAME engine.unit.version COMMAND engine_version_test)
-
-# Death test: version_component called out of contract, so a live assert aborts it.
-# No test property is involved - neither WILL_FAIL nor PASS_REGULAR_EXPRESSION can
-# rescue a SIGABRT, so the binary traps the abort and exits 0 itself. See the comment
-# at the top of the source for why. This stays a plain exit-code test.
-add_executable(engine_version_contract_test unit/version_component_contract_test.cpp)
-target_link_libraries(engine_version_contract_test PRIVATE engine::runtime)
-add_test(NAME engine.unit.version_component_contract COMMAND engine_version_contract_test)
+# engine_add_gtest (cmake/TestHelpers.cmake) links engine::runtime and
+# GTest::gtest_main, then registers one CTest entry per TEST() case. It also
+# picks a registration strategy that survives the MinGW cross build; the reason
+# is documented there.
+#
+# engine::runtime is an INTERFACE target that already carries
+# engine::project_options and engine::project_warnings (see
+# engine/CMakeLists.txt), so linking it alone brings the standard, warning,
+# contract, and stdc++exp-for-std::print flags with it.
+#
+# The out-of-contract death tests live in this same binary now. They previously
+# needed a separate executable because a SIGABRT is a CTest result category that
+# neither WILL_FAIL nor PASS_REGULAR_EXPRESSION inverts, and the workaround for
+# that made everything after the abort unreachable. EXPECT_DEATH forks a
+# subprocess per assertion, so unit/version_component_contract_test.cpp is gone.
+# See docs/adr/0009-googletest-for-cpu-tests.md.
+engine_add_gtest(engine_version_test unit/version_test.cpp)
