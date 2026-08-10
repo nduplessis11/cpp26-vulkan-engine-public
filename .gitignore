@@ -7,6 +7,8 @@
 .vscode/*
 !.vscode/launch.example.json
 !.vscode/tasks.example.json
+.zed/*
+!.zed/debug.example.json
 .idea/
 *.user
 *.suo

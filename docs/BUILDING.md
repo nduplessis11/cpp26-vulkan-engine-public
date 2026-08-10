@@ -70,6 +70,14 @@ safeguards, added by `cmake/DebugDiagnostics.cmake` and `cmake/CompilerChecks.cm
   compiler that isn't the `x86_64-w64-mingw32` toolchain. The configure log also prints
   the resolved compiler identity and version (`Compiler identity check passed: ...`) so
   you can confirm which GCC you actually built with.
+- **Contracts preview.** `ENGINE_ENABLE_CONTRACTS` (default `ON`, see
+  `cmake/Contracts.cmake`) probes for GCC's experimental `-fcontracts` support
+  (`check_cxx_compiler_flag`) and, if accepted, adds it to Debug builds only, so
+  `pre()`/`post()`/`contract_assert()` are live. If the resolved compiler doesn't accept
+  the flag (e.g. a GCC predating the 16.1 preview), configure prints a `WARNING` and
+  skips it rather than failing. Turn it off with `-DENGINE_ENABLE_CONTRACTS=OFF`. See
+  `curriculum/lectures/002_choose-error-and-contract-conventions.md` for why this is
+  still opt-in-by-flag rather than a standardized language feature.
 
 ## Docker (containerized builds)
 
@@ -106,11 +114,47 @@ docker compose run --rm windows-mingw cmake --build --preset docker-windows-ming
 ```
 
 The equivalent `make images`, `make build-docker-linux`,
-`make test-docker-linux`, and `make build-docker-windows` targets wrap the
-same commands; `make images` already builds the mingw toolchain image first.
+`make test-docker-linux`, `make build-docker-windows`, and
+`make run-scratchpad` targets wrap the same commands; `make images` already
+builds the mingw toolchain image first.
 Both the native GCC 17 bootstrap (`linux-gcc-builder` stage) and the cross
 toolchain bootstrap take noticeably longer than pulling a prebuilt image did
 -- this is a one-time cost per Docker layer cache, not a per-build cost.
+
+### Scratchpad (throwaway experiments)
+
+`apps/scratchpad` is a personal syntax/idea sandbox. It links
+`engine::project_options`, `engine::project_warnings`, and `engine::runtime`.
+Because `engine::runtime` is header-only (`INTERFACE`), that last one only adds
+`engine/include` to the include path -- it compiles nothing, so the scratchpad
+can exercise real engine headers while still building in two compile steps:
+
+```bash
+make run-scratchpad
+make run-scratchpad ARGS="--verbose 3"   # pass arguments to the binary
+```
+
+That configures if needed, builds `--target engine_scratchpad` alone (two
+compile steps, not the whole tree), and runs the binary in the `linux`
+container. `make build-scratchpad` stops after the build. The raw form is:
+
+```bash
+docker compose run --rm linux cmake --build --preset docker-linux-gcc-debug --target engine_scratchpad
+docker compose run --rm linux ./out/build/docker-linux-gcc-debug/apps/scratchpad/engine_scratchpad
+```
+
+The dependency runs one way only: scratchpad -> engine. Nothing under `engine/`
+or `tests/` may depend on `engine_scratchpad`, and a lesson's acceptance
+evidence belongs in `tests/`, never here.
+
+Run it **inside** the container. The binary links the image's from-source GCC 17
+libstdc++, which is typically newer than the host's, so running it on the host
+fails with a `GLIBCXX_... not found` loader error.
+
+Because `engine::project_options` carries `-fcontracts` in Debug (see
+`cmake/Contracts.cmake`), `pre()`, `post()`, and `contract_assert()` are live
+in the scratchpad -- useful for trying contract and `std::expected` shapes
+before committing to them in engine code.
 
 The `docker-windows-mingw-debug` preset builds scaffold-only
 (`ENGINE_REQUIRE_VULKAN_SDK=OFF`): `Dockerfile.mingw-from-source` vendors

@@ -12,9 +12,11 @@ list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 include(ProjectOptions)
 include(CompilerWarnings)
 include(Sanitizers)
+include(Contracts)
 include(CompilerChecks)
 include(DebugDiagnostics)
 include(WindowsRuntime)
+include(StdPrint)
 
 engine_define_project_options()
 engine_validate_compiler()
@@ -32,8 +34,10 @@ add_library(engine_project_warnings INTERFACE)
 add_library(engine::project_warnings ALIAS engine_project_warnings)
 engine_set_project_warnings(engine_project_warnings)
 engine_enable_sanitizers(engine_project_options)
+engine_enable_contracts(engine_project_options)
 engine_enable_debug_diagnostics(engine_project_options)
 engine_enable_static_windows_runtime(engine_project_options)
+engine_enable_std_print(engine_project_options)
 
 find_package(Vulkan 1.4 QUIET)
 
@@ -54,9 +58,17 @@ endif()
 
 add_subdirectory(engine)
 add_subdirectory(apps/sandbox)
+add_subdirectory(apps/scratchpad)
 
 if(ENGINE_BUILD_TESTS)
     include(CTest)
     enable_testing()
+
+    # Fetched here rather than in tests/CMakeLists.txt so the dependency is
+    # visible at the top level and is skipped entirely when tests are off.
+    include(Dependencies)
+    include(TestHelpers)
+    engine_fetch_test_dependencies()
+
     add_subdirectory(tests)
 endif()
