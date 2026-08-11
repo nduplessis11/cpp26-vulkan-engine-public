@@ -7,7 +7,7 @@
 #include <vulkan/vulkan_core.h>
 #endif
 
-int main() {
+auto main() -> int {
     std::cout << engine::core::scaffold_name() << '\n';
     std::cout << "Scaffold version: " << engine::core::scaffold_version() << '\n';
     std::cout << "__cplusplus: " << __cplusplus << '\n';

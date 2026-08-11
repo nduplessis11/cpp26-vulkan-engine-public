@@ -3,11 +3,11 @@
 
 namespace engine::core {
 
-[[nodiscard]] constexpr std::string_view scaffold_name() noexcept {
+[[nodiscard]] constexpr auto scaffold_name() noexcept -> std::string_view {
     return "C++26 Vulkan Engine learning scaffold";
 }
 
-[[nodiscard]] constexpr std::string_view scaffold_version() noexcept {
+[[nodiscard]] constexpr auto scaffold_version() noexcept -> std::string_view {
     return "0.0.0-learning";
 }
 

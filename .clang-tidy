@@ -6,6 +6,7 @@ Checks: >
   cppcoreguidelines-init-variables,
   cppcoreguidelines-narrowing-conversions,
   modernize-use-nullptr,
+  modernize-use-trailing-return-type,
   performance-*,
   portability-*,
   readability-const-return-type,

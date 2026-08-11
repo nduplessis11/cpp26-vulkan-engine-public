@@ -24,7 +24,7 @@ struct Version {
     // the defaulted ordering silently wrong ("" sorts before "alpha", but semver
     // ranks 1.0.0-alpha *below* 1.0.0), with no compile error to catch it.
     // Nothing needs ordering yet; adding <=> later is not a breaking change.
-    friend bool operator==(Version const&, Version const&) = default;
+    friend auto operator==(Version const&, Version const&) -> bool = default;
 };
 
 // Both need a real definition here, marked `inline` -- engine::runtime is a
@@ -33,7 +33,8 @@ struct Version {
 // (apps/sandbox/main.cpp and a future test) would violate the One
 // Definition Rule at link time.
 
-[[nodiscard]] inline std::expected<Version, VersionParseError> parse_version(std::string_view text) {
+[[nodiscard]] inline auto parse_version(std::string_view text)
+    -> std::expected<Version, VersionParseError> {
     if (text.empty()) return std::unexpected{VersionParseError::EmptyInput};
 
     char const* const last = text.data() + text.size();
@@ -62,7 +63,7 @@ struct Version {
     return Version{parts[0], parts[1], parts[2]};
 }
 
-[[nodiscard]] inline unsigned int version_component(Version const& v, int index) {
+[[nodiscard]] inline auto version_component(Version const& v, int index) -> unsigned int {
     assert(index >= 0 && index <= 2);
     switch (index) {
         case 0: return v.major;
