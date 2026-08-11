@@ -27,7 +27,7 @@
 
 namespace engine::core {
 
-inline void PrintTo(Version const& v, std::ostream* os) {
+inline auto PrintTo(Version const& v, std::ostream* os) -> void {
     *os << v.major << '.' << v.minor << '.' << v.patch;
 }
 
@@ -35,7 +35,7 @@ inline void PrintTo(Version const& v, std::ostream* os) {
 // adding a third VersionParseError produces a -Wswitch warning pointing here
 // instead of silently printing a fallback forever. The line after the switch
 // handles a value cast in from outside the enumerator set.
-inline void PrintTo(VersionParseError e, std::ostream* os) {
+inline auto PrintTo(VersionParseError e, std::ostream* os) -> void {
     switch (e) {
         case VersionParseError::EmptyInput:       *os << "EmptyInput"; return;
         case VersionParseError::MalformedVersion: *os << "MalformedVersion"; return;
@@ -43,12 +43,12 @@ inline void PrintTo(VersionParseError e, std::ostream* os) {
     *os << "VersionParseError(" << static_cast<int>(e) << ')';
 }
 
-inline void PrintTo(std::unexpected<VersionParseError> const& u, std::ostream* os) {
+inline auto PrintTo(std::unexpected<VersionParseError> const& u, std::ostream* os) -> void {
     *os << "unexpected ";
     PrintTo(u.error(), os);
 }
 
-inline void PrintTo(std::expected<Version, VersionParseError> const& r, std::ostream* os) {
+inline auto PrintTo(std::expected<Version, VersionParseError> const& r, std::ostream* os) -> void {
     if (r) {
         PrintTo(*r, os);
         return;

@@ -13,7 +13,7 @@
 ## C++
 
 - Use `snake_case` for functions, variables, and files and `PascalCase` for types unless an ADR changes it.
-- Declare functions with a trailing return type: `auto f(args) -> T`, including `main`. Functions returning `void` keep the leading form, matching what `modernize-use-trailing-return-type` enforces in `.clang-tidy`.
+- Declare functions with a trailing return type: `auto f(args) -> T`, including `main` and `void` returns (`auto f() -> void`). `.clang-tidy` runs `modernize-use-trailing-return-type`, which catches every case except `void` — the check has no option to include it, so `void` declarations are review-enforced only.
 - Use `enum class`, `[[nodiscard]]`, `noexcept`, `std::span`, and `std::string_view` where semantics fit.
 - Prefer scoped owners and explicit reset or release operations.
 - Keep headers self-contained and minimize includes.
