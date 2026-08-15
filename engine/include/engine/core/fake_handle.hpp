@@ -18,4 +18,19 @@ inline auto fake_close(FakeDriver& d, [[maybe_unused]] std::uint32_t id) -> void
     ++d.close_count;
 }
 
+class FakeHandle {
+  public:
+    FakeHandle() = default;
+    explicit FakeHandle(FakeDriver& driver) : driver_{&driver}, id_{fake_open(driver)} {}
+
+    [[nodiscard]]
+    auto is_valid() const -> bool {
+        return id_ != 0;
+    }
+
+  private:
+    FakeDriver* driver_{};
+    std::uint32_t id_{};
+};
+
 } // namespace engine::core
