@@ -1,0 +1,45 @@
+// Tests for the fake driver used by FakeHandle.
+//
+// Each test creates its own driver so the counters start at zero. Later
+// FakeHandle tests will use those counters to verify that handles are closed.
+#include <engine/core/fake_handle.hpp>
+#include <gtest/gtest.h>
+
+using engine::core::fake_close;
+using engine::core::fake_open;
+using engine::core::FakeDriver;
+
+// --- FakeDriver: id issuance ------------------------------------------------
+
+// ID 0 is reserved for an empty FakeHandle, so real handles start at 1.
+TEST(FakeDriver, OpenIssuesDistinctIdsStartingAtOne) {
+    FakeDriver driver;
+
+    EXPECT_EQ(fake_open(driver), 1u);
+    EXPECT_EQ(fake_open(driver), 2u);
+    EXPECT_EQ(driver.open_count, 2u);
+}
+
+// --- FakeDriver: close accounting -------------------------------------------
+
+TEST(FakeDriver, CloseIncrementsCloseCount) {
+    FakeDriver driver;
+    auto handle = fake_open(driver);
+
+    auto before_close = driver.close_count;
+    fake_close(driver, handle);
+
+    EXPECT_EQ(driver.close_count, before_close + 1);
+}
+
+// IDs are retired on close, never recycled. A stale ID must remain invalid
+// so use-after-close cannot accidentally target a new live handle.
+TEST(FakeDriver, OpenDoesNotReuseIds) {
+    FakeDriver driver;
+
+    auto first = fake_open(driver);
+    fake_close(driver, first);
+    auto second = fake_open(driver);
+
+    EXPECT_NE(first, second);
+}

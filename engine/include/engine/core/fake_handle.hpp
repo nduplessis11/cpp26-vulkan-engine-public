@@ -8,12 +8,13 @@ struct FakeDriver {
     std::uint32_t close_count = 0;
 };
 
-inline std::uint32_t fake_open(FakeDriver& d) {
+[[nodiscard]]
+inline auto fake_open(FakeDriver& d) -> std::uint32_t {
     ++d.open_count;
     return d.next_id++;
 }
 
-inline void fake_close(FakeDriver& d, std::uint32_t id [[maybe_unused]]) {
+inline auto fake_close(FakeDriver& d, [[maybe_unused]] std::uint32_t id) -> void {
     ++d.close_count;
 }
 

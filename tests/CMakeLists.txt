@@ -19,3 +19,4 @@ add_test(NAME engine.scaffold.smoke COMMAND engine_scaffold_smoke)
 # subprocess per assertion, so unit/version_component_contract_test.cpp is gone.
 # See docs/adr/0009-googletest-for-cpu-tests.md.
 engine_add_gtest(engine_version_test unit/version_test.cpp)
+engine_add_gtest(engine_fake_handle_test unit/fake_handle_test.cpp)
