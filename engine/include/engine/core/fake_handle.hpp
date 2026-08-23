@@ -23,6 +23,12 @@ class FakeHandle {
     FakeHandle() = default;
     explicit FakeHandle(FakeDriver& driver) : driver_{&driver}, id_{fake_open(driver)} {}
 
+    ~FakeHandle() {
+        if (is_valid()) {
+            fake_close(*driver_, id_);
+        }
+    }
+
     [[nodiscard]]
     auto is_valid() const -> bool {
         return id_ != 0;
