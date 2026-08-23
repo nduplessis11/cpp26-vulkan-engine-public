@@ -29,6 +29,9 @@ class FakeHandle {
         }
     }
 
+    FakeHandle(const FakeHandle&) = delete;
+    auto operator=(const FakeHandle&) -> FakeHandle& = delete;
+
     [[nodiscard]]
     auto is_valid() const -> bool {
         return id_ != 0;

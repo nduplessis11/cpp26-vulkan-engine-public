@@ -4,11 +4,16 @@
 // FakeHandle tests use those counters to verify that handles are closed.
 #include <engine/core/fake_handle.hpp>
 #include <gtest/gtest.h>
+#include <type_traits>
 
 using engine::core::fake_close;
 using engine::core::fake_open;
 using engine::core::FakeDriver;
 using engine::core::FakeHandle;
+
+// A copy makes two owners of one id, and both destructors close it.
+static_assert(!std::is_copy_constructible_v<FakeHandle>);
+static_assert(!std::is_copy_assignable_v<FakeHandle>);
 
 // --- FakeDriver: id issuance ------------------------------------------------
 
