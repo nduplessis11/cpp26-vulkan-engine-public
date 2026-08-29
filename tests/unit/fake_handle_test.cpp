@@ -5,6 +5,7 @@
 #include <engine/core/fake_handle.hpp>
 #include <gtest/gtest.h>
 #include <type_traits>
+#include <utility>
 
 using engine::core::fake_close;
 using engine::core::fake_open;
@@ -60,5 +61,47 @@ TEST(FakeHandle, DestructionClosesIdOnce) {
         FakeHandle handle{driver};
     }
 
+    EXPECT_EQ(driver.close_count, 1u);
+}
+
+// --- FakeHandle: move construction ------------------------------------------
+
+TEST(FakeHandle, MoveConstructionTransfersOwnership) {
+    FakeDriver driver;
+    {
+        FakeHandle source{driver};
+        FakeHandle moved{std::move(source)};
+
+        EXPECT_FALSE(source.is_valid());
+        EXPECT_TRUE(moved.is_valid());
+    }
+    EXPECT_EQ(driver.close_count, 1u);
+}
+
+// --- FakeHandle: move assignment --------------------------------------------
+
+TEST(FakeHandle, MoveAssignmentClosesTheTargetsOldId) {
+    FakeDriver driver;
+    {
+        FakeHandle source{driver};
+        FakeHandle moved{driver};
+        moved = std::move(source);
+
+        EXPECT_FALSE(source.is_valid());
+        EXPECT_TRUE(moved.is_valid());
+    }
+    EXPECT_EQ(driver.close_count, 2u);
+}
+
+TEST(FakeHandle, SelfMoveAssignmentKeepsTheHandleValid) {
+    FakeDriver driver;
+    {
+        FakeHandle source{driver};
+        FakeHandle& alias = source; // no compiler warning
+
+        source = std::move(alias);
+
+        EXPECT_TRUE(source.is_valid());
+    }
     EXPECT_EQ(driver.close_count, 1u);
 }
