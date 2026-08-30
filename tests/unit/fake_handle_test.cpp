@@ -154,3 +154,19 @@ TEST(FakeHandle, EmptyHandleClosesNothing) {
     }
     EXPECT_EQ(driver.close_count, 0u);
 }
+
+// --- FakeHandle: get --------------------------------------------------------
+
+TEST(FakeHandle, GetReturnsTheOwnedId) {
+    FakeDriver driver;
+    FakeHandle handle{driver};
+
+    EXPECT_EQ(handle.get(), 1u);
+}
+
+TEST(FakeHandleDeathTest, RejectsGetOnEmptyHandle) {
+    FakeHandle handle;
+    ASSERT_FALSE(handle.is_valid());
+
+    EXPECT_DEATH(static_cast<void>(handle.get()), "is_valid");
+}

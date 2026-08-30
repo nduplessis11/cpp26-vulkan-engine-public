@@ -1,5 +1,7 @@
 #pragma once
+#include <cassert>
 #include <cstdint>
+
 namespace engine::core {
 
 struct FakeDriver {
@@ -61,6 +63,12 @@ class FakeHandle {
             fake_close(*driver_, id_);
             id_ = 0;
         }
+    }
+
+    [[nodiscard]]
+    auto get() const noexcept -> std::uint32_t {
+        assert(is_valid());
+        return id_;
     }
 
   private:
