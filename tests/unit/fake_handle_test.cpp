@@ -105,3 +105,52 @@ TEST(FakeHandle, SelfMoveAssignmentKeepsTheHandleValid) {
     }
     EXPECT_EQ(driver.close_count, 1u);
 }
+
+// --- FakeHandle: reset ------------------------------------------------------
+
+TEST(FakeHandle, ResetClosesValidHandle) {
+    FakeDriver driver;
+    {
+        FakeHandle handle{driver};
+        ASSERT_TRUE(handle.is_valid());
+
+        handle.reset();
+
+        EXPECT_EQ(driver.close_count, 1u);
+    }
+}
+
+TEST(FakeHandle, DestructorAfterResetDoesNotCloseAgain) {
+    FakeDriver driver;
+    {
+        FakeHandle handle{driver};
+        ASSERT_TRUE(handle.is_valid());
+        handle.reset();
+        ASSERT_EQ(driver.close_count, 1u);
+    }
+    EXPECT_EQ(driver.close_count, 1u);
+}
+
+TEST(FakeHandle, ResetTwiceOnlyClosesHandleOnce) {
+    FakeDriver driver;
+    {
+        FakeHandle handle{driver};
+        ASSERT_TRUE(handle.is_valid());
+
+        handle.reset();
+        handle.reset();
+
+        EXPECT_EQ(driver.close_count, 1u);
+    }
+}
+
+// --- FakeHandle: empty state ------------------------------------------------
+
+TEST(FakeHandle, EmptyHandleClosesNothing) {
+    FakeDriver driver;
+    {
+        FakeHandle handle;
+        ASSERT_FALSE(handle.is_valid());
+    }
+    EXPECT_EQ(driver.close_count, 0u);
+}

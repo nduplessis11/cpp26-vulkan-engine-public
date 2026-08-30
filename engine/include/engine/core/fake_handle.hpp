@@ -9,12 +9,12 @@ struct FakeDriver {
 };
 
 [[nodiscard]]
-inline auto fake_open(FakeDriver& d) -> std::uint32_t {
+inline auto fake_open(FakeDriver& d) noexcept -> std::uint32_t {
     ++d.open_count;
     return d.next_id++;
 }
 
-inline auto fake_close(FakeDriver& d, [[maybe_unused]] std::uint32_t id) -> void {
+inline auto fake_close(FakeDriver& d, [[maybe_unused]] std::uint32_t id) noexcept -> void {
     ++d.close_count;
 }
 
@@ -57,8 +57,15 @@ class FakeHandle {
     }
 
     [[nodiscard]]
-    auto is_valid() const -> bool {
+    auto is_valid() const noexcept -> bool {
         return id_ != 0;
+    }
+
+    auto reset() noexcept -> void {
+        if (is_valid()) {
+            fake_close(*driver_, id_);
+            id_ = 0;
+        }
     }
 
   private:
