@@ -24,16 +24,14 @@ class FakeHandle {
     explicit FakeHandle(FakeDriver& driver) : driver_{&driver}, id_{fake_open(driver)} {}
 
     ~FakeHandle() {
-        if (is_valid()) {
-            fake_close(*driver_, id_);
-        }
+        reset();
     }
 
     FakeHandle(const FakeHandle&) = delete;
     auto operator=(const FakeHandle&) -> FakeHandle& = delete;
 
-    // A moved-from handle is left in the default-constructed state, so the
-    // destructor's is_valid() check closes the stolen id exactly once.
+    // A moved-from handle is left in the default-constructed state, so
+    // releasing it is a no-op and the stolen id is closed exactly once.
     FakeHandle(FakeHandle&& other) noexcept : driver_{other.driver_}, id_{other.id_} {
         other.id_ = 0;
         other.driver_ = nullptr;
@@ -43,10 +41,7 @@ class FakeHandle {
             return *this;
         }
 
-        if (is_valid()) {
-            fake_close(*driver_, id_);
-            id_ = 0;
-        }
+        reset();
 
         driver_ = other.driver_;
         id_ = other.id_;
