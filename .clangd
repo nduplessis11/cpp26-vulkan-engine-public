@@ -4,3 +4,9 @@
 # Switch the path here when you switch presets.
 CompileFlags:
   CompilationDatabase: out/build/linux-gcc-debug
+  # clangd parses GCC's compilation database with Clang. Ignore GCC's contracts
+  # flag here; the real build still gets it from cmake/Contracts.cmake.
+  # Clang cannot parse contract syntax yet, so those expressions will still be
+  # marked as errors in the editor.
+  Remove:
+    - -fcontracts

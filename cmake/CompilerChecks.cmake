@@ -7,7 +7,9 @@ function(engine_validate_compiler)
             "(see docs/adr/0001-cpp26-mode-progressive-adoption.md). "
             "CMAKE_CXX_COMPILER_ID reported '${CMAKE_CXX_COMPILER_ID}' "
             "for CMAKE_CXX_COMPILER='${CMAKE_CXX_COMPILER}'. "
-            "Select the pinned GCC toolchain explicitly, e.g. -DCMAKE_CXX_COMPILER=g++."
+            "Select the pinned GCC toolchain explicitly: on Linux use the "
+            "linux-gcc-debug preset (or -DCMAKE_CXX_COMPILER=g++); on Windows open an "
+            "MSYS2 MinGW shell and use the windows-gcc-debug preset. MSVC is not supported."
         )
     endif()
 
