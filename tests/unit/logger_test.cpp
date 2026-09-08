@@ -9,6 +9,7 @@
 #include <source_location>
 #include <string>
 
+using engine::core::CaptureSink;
 using engine::core::Category;
 using engine::core::LogRecord;
 using engine::core::Severity;
@@ -28,4 +29,31 @@ TEST(FormatRecord, RendersSeverityCategoryMessageAndLocation) {
     auto const expected{
         std::format("[info] sandbox: window created (logger_test.cpp:{})", loc.line())};
     EXPECT_EQ(output, expected);
+}
+
+// --- CaptureSink ------------------------------------------------------------
+
+TEST(CaptureSink, StoresTheFormattedLine) {
+    CaptureSink sink;
+    auto const loc{std::source_location::current()};
+
+    sink.write(LogRecord{Severity::Info, kSandbox, "window created", loc});
+
+    ASSERT_EQ(sink.lines().size(), 1U);
+
+    auto const expected{
+        std::format("[info] sandbox: window created (logger_test.cpp:{})", loc.line())};
+    EXPECT_EQ(sink.lines()[0], expected);
+}
+
+TEST(CaptureSink, CopiesTheMessageOutOfATemporary) {
+    CaptureSink sink;
+    auto const loc{std::source_location::current()};
+
+    sink.write(LogRecord{Severity::Info, kSandbox, std::format("frame {}", 7), loc});
+
+    ASSERT_EQ(sink.lines().size(), 1U);
+
+    auto const expected{std::format("[info] sandbox: frame 7 (logger_test.cpp:{})", loc.line())};
+    EXPECT_EQ(sink.lines()[0], expected);
 }

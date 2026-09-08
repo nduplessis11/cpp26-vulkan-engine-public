@@ -3,9 +3,11 @@
 #include <cstdint>
 #include <format>
 #include <source_location>
+#include <span>
 #include <string>
 #include <string_view>
 #include <utility>
+#include <vector>
 
 namespace engine::core {
 
@@ -37,6 +39,7 @@ struct LogRecord {
     std::source_location location;
 };
 
+[[nodiscard]]
 auto inline format_record(LogRecord const& record) -> std::string {
     std::string_view const path{record.location.file_name()};
     auto const slash = path.find_last_of('/');
@@ -45,5 +48,25 @@ auto inline format_record(LogRecord const& record) -> std::string {
     return std::format("[{}] {}: {} ({}:{})", severity_string(record.severity),
                        record.category.name, record.message, file, record.location.line());
 }
+
+struct Sink {
+    virtual ~Sink() = default;
+    virtual auto write(LogRecord const&) -> void = 0;
+};
+
+class CaptureSink : public Sink {
+  public:
+    auto write(LogRecord const& record) -> void override {
+        lines_.push_back(format_record(record));
+    }
+
+    [[nodiscard]]
+    auto lines() const -> std::span<std::string const> {
+        return lines_;
+    }
+
+  private:
+    std::vector<std::string> lines_;
+};
 
 } // namespace engine::core

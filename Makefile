@@ -1,5 +1,6 @@
 .PHONY: images mingw-toolchain-image \
         configure-docker-linux build-docker-linux test-docker-linux \
+        configure-docker-linux-asan build-docker-linux-asan test-docker-linux-asan \
         configure-docker-windows build-docker-windows \
         build-scratchpad run-scratchpad \
         ccache-stats clean
@@ -35,6 +36,18 @@ build-docker-linux: configure-docker-linux
 
 test-docker-linux: build-docker-linux
 	$(COMPOSE) run --rm linux ctest --preset docker-linux-gcc-debug
+
+# Same three steps as the docker-linux targets, against a preset that turns on
+# -fsanitize=address,undefined. It uses its own build directory, so switching
+# between the two does not force a rebuild each way.
+configure-docker-linux-asan:
+	$(COMPOSE) run --rm linux cmake --preset docker-linux-gcc-asan
+
+build-docker-linux-asan: configure-docker-linux-asan
+	$(COMPOSE) run --rm linux cmake --build --preset docker-linux-gcc-asan
+
+test-docker-linux-asan: build-docker-linux-asan
+	$(COMPOSE) run --rm linux ctest --preset docker-linux-gcc-asan
 
 # apps/scratchpad links engine::runtime, which is header-only (INTERFACE), so
 # --target engine_scratchpad still builds two files instead of the whole graph. Run it in
