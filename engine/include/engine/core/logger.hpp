@@ -69,4 +69,20 @@ class CaptureSink : public Sink {
     std::vector<std::string> lines_;
 };
 
+class Logger {
+  public:
+    Logger(Sink& sink, Severity threshold) : sink_{sink}, threshold_{threshold} {}
+
+    auto log(Severity severity, Category category, std::string_view message,
+             std::source_location location = std::source_location::current()) -> void {
+        if (severity >= threshold_) {
+            sink_.write(LogRecord{severity, category, message, location});
+        }
+    }
+
+  private:
+    Sink& sink_;
+    Severity threshold_;
+};
+
 } // namespace engine::core
