@@ -72,6 +72,8 @@ TEST(FakeHandle, MoveConstructionTransfersOwnership) {
         FakeHandle source{driver};
         FakeHandle moved{std::move(source)};
 
+        // Reading the moved-from handle is the assertion: the move must empty it.
+        // NOLINTNEXTLINE(bugprone-use-after-move,clang-analyzer-cplusplus.Move)
         EXPECT_FALSE(source.is_valid());
         EXPECT_TRUE(moved.is_valid());
     }
@@ -87,6 +89,8 @@ TEST(FakeHandle, MoveAssignmentClosesTheTargetsOldId) {
         FakeHandle moved{driver};
         moved = std::move(source);
 
+        // Reading the moved-from handle is the assertion: the move must empty it.
+        // NOLINTNEXTLINE(bugprone-use-after-move,clang-analyzer-cplusplus.Move)
         EXPECT_FALSE(source.is_valid());
         EXPECT_TRUE(moved.is_valid());
     }

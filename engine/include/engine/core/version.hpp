@@ -1,14 +1,15 @@
 #pragma once
+#include <array>
 #include <cassert>
+#include <charconv>
+#include <cstdint>
 #include <expected>
 #include <string_view>
 #include <utility>
-#include <charconv>
-#include <array>
 
 namespace engine::core {
 
-enum class VersionParseError {
+enum class VersionParseError : std::uint8_t {
     EmptyInput,
     MalformedVersion,
 };
@@ -35,13 +36,15 @@ struct Version {
 
 [[nodiscard]] inline auto parse_version(std::string_view text)
     -> std::expected<Version, VersionParseError> {
-    if (text.empty()) return std::unexpected{VersionParseError::EmptyInput};
+    if (text.empty())
+        return std::unexpected{VersionParseError::EmptyInput};
 
     char const* const last = text.data() + text.size();
     char const* cursor = text.data();
     std::array<unsigned int, 3> parts{};
 
-    // Loop invariant: at top of each iteration, cursor points at the first character of the next component.
+    // Loop invariant: at top of each iteration, cursor points at the first character of the next
+    // component.
     for (std::size_t i = 0; i < parts.size(); ++i) {
         const auto [ptr, ec] = std::from_chars(cursor, last, parts[i]);
 
@@ -66,11 +69,18 @@ struct Version {
 [[nodiscard]] inline auto version_component(Version const& v, int index) -> unsigned int {
     assert(index >= 0 && index <= 2);
     switch (index) {
-        case 0: return v.major;
-        case 1: return v.minor;
-        case 2: return v.patch;
+    case 0:
+        return v.major;
+    case 1:
+        return v.minor;
+    case 2:
+        return v.patch;
+    // The assert above already rejects every other index in a debug build. This
+    // label exists because index is an int, so the compiler cannot prove the
+    // three cases are exhaustive the way it can for a switch over an enum.
+    default:
+        std::unreachable();
     }
-    std::unreachable();
 }
 
 } // namespace engine::core
