@@ -135,3 +135,5 @@ TEST(Logger, TwoLoggersDoNotObserveEachOther) {
     EXPECT_TRUE(info_sink.lines()[0].starts_with("[info] sandbox: info only (logger_test.cpp:"));
     EXPECT_TRUE(warn_sink.lines()[0].starts_with("[error] sandbox: warn only (logger_test.cpp:"));
 }
+
+// TODO(human): write the first failing test for Logger::vlog here.
