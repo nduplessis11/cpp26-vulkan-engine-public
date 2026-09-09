@@ -1,24 +1,9 @@
-// GoogleTest value printers for engine::core's version types.
+// Print readable version values in GoogleTest failures.
+// Keep these helpers in tests/ so engine headers stay independent of GoogleTest.
 //
-// Without these, a failed EXPECT_EQ prints a hex dump rather than a value:
-//
-//   parse_version("1.2")
-//     Which is: 16-byte object <01-00 00-00 67-02 00-00 F0-37 4C-7B 00-02 00-00>
-//
-// GoogleTest finds PrintTo by argument-dependent lookup, so these must live in
-// namespace engine::core -- but the *file* belongs here in tests/, not in the
-// engine headers. PrintTo is GoogleTest vocabulary, and the engine's public
-// interface should not carry a test framework's naming convention.
-//
-// ADL reaches the std::expected and std::unexpected overloads because template
-// arguments contribute to the associated namespace set: instantiating them with
-// engine::core types associates engine::core. That is what makes this possible
-// without opening namespace std, which for a non-program-defined type would be
-// undefined behavior.
-//
-// All four overloads are load-bearing. Drop the std::unexpected one and an
-// EXPECT_EQ against std::unexpected{...} hex-dumps its right-hand operand even
-// though the other three are present.
+// Argument-dependent lookup (ADL) finds PrintTo in engine::core, including for
+// expected/unexpected with engine::core template arguments. No additions to std
+// are needed. Keep all four overloads so neither side of EXPECT_EQ prints raw bytes.
 #pragma once
 #include <expected>
 #include <ostream>
@@ -31,10 +16,8 @@ inline auto PrintTo(Version const& v, std::ostream* os) -> void {
     *os << v.major << '.' << v.minor << '.' << v.patch;
 }
 
-// No default: label on purpose. With every enumerator listed and no default,
-// adding a third VersionParseError produces a -Wswitch warning pointing here
-// instead of silently printing a fallback forever. The line after the switch
-// handles a value cast in from outside the enumerator set.
+// Omit default so -Wswitch warns when a new error is missing here.
+// The fallback prints values outside the enum's named cases.
 inline auto PrintTo(VersionParseError e, std::ostream* os) -> void {
     switch (e) {
         case VersionParseError::EmptyInput:       *os << "EmptyInput"; return;

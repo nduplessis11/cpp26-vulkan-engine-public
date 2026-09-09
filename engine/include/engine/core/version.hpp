@@ -19,23 +19,16 @@ struct Version {
     unsigned int minor;
     unsigned int patch;
 
-    // Equality only, on purpose. A defaulted <=> would compare major, then
-    // minor, then patch -- correct for semver precedence today only because the
-    // field order happens to match. Adding a pre-release field later would make
-    // the defaulted ordering silently wrong ("" sorts before "alpha", but semver
-    // ranks 1.0.0-alpha *below* 1.0.0), with no compile error to catch it.
-    // Nothing needs ordering yet; adding <=> later is not a breaking change.
+    // Only equality is needed. Default <=> ordering would be wrong if we later
+    // add pre-release labels: 1.0.0-alpha must sort before 1.0.0.
     friend auto operator==(Version const&, Version const&) -> bool = default;
 };
 
-// Both need a real definition here, marked `inline` -- engine::runtime is a
-// header-only INTERFACE target (see engine/CMakeLists.txt), so a
-// non-inline free-function definition pulled in by two translation units
-// (apps/sandbox/main.cpp and a future test) would violate the One
-// Definition Rule at link time.
+// Both functions are defined in this header. inline lets multiple source
+// files include them without duplicate-definition errors at link time.
 
-[[nodiscard]] inline auto parse_version(std::string_view text)
-    -> std::expected<Version, VersionParseError> {
+[[nodiscard]]
+inline auto parse_version(std::string_view text) -> std::expected<Version, VersionParseError> {
     if (text.empty())
         return std::unexpected{VersionParseError::EmptyInput};
 
@@ -43,8 +36,7 @@ struct Version {
     char const* cursor = text.data();
     std::array<unsigned int, 3> parts{};
 
-    // Loop invariant: at top of each iteration, cursor points at the first character of the next
-    // component.
+    // Each iteration starts at the next component, or at the end if it is missing.
     for (std::size_t i = 0; i < parts.size(); ++i) {
         const auto [ptr, ec] = std::from_chars(cursor, last, parts[i]);
 
@@ -66,7 +58,8 @@ struct Version {
     return Version{parts[0], parts[1], parts[2]};
 }
 
-[[nodiscard]] inline auto version_component(Version const& v, int index) -> unsigned int {
+[[nodiscard]]
+inline auto version_component(Version const& v, int index) -> unsigned int {
     assert(index >= 0 && index <= 2);
     switch (index) {
     case 0:
@@ -75,9 +68,8 @@ struct Version {
         return v.minor;
     case 2:
         return v.patch;
-    // The assert above already rejects every other index in a debug build. This
-    // label exists because index is an int, so the compiler cannot prove the
-    // three cases are exhaustive the way it can for a switch over an enum.
+    // assert checks the range in Debug; unreachable tells the compiler that
+    // callers must never pass another index.
     default:
         std::unreachable();
     }

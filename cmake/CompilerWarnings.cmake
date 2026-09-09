@@ -7,9 +7,9 @@ function(engine_set_project_warnings target_name)
             -Wall -Wextra -Wpedantic -Wconversion -Wsign-conversion
             -Wshadow -Wnon-virtual-dtor -Wold-style-cast
             -Woverloaded-virtual -Wnull-dereference -Wdouble-promotion -Wformat=2
-            # Not in -Wall or -Wextra, because it fires on legitimate pre-C++11 code.
-            # Declaring a destructor suppresses the implicit move operations but keeps
-            # the implicit copies, so std::move on an owning type silently copies it.
+            # Warn when a user-declared destructor leaves implicit copies in place.
+            # It also blocks implicit moves, so std::move may copy an owning type.
+            # -Wall and -Wextra do not include this check.
             -Wdeprecated-copy-dtor
     )
     if(ENGINE_WARNINGS_AS_ERRORS)

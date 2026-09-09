@@ -1,8 +1,4 @@
-// Tests for the logging channel.
-//
-// Each test builds its own sink and logger in the test body. There is no
-// fixture-level shared state, because "two loggers never observe each other"
-// is one of the things under test.
+// Logging tests use separate sinks and loggers to check their independence.
 #include <engine/core/logger.hpp>
 #include <format>
 #include <gtest/gtest.h>
@@ -22,10 +18,9 @@ static_assert(!std::is_default_constructible_v<Logger>,
               "A default-constructible Logger invites a global instance. "
               "Construct each one with the sink it writes to.");
 
-// --- severity_string --------------------------------------------------------
+// Severity names.
 
-// One row per enumerator. format_record only ever renders one severity, so
-// without this a typo in any other branch ships green.
+// Check every severity; the formatting test below only uses Info.
 TEST(SeverityString, SpellsEveryEnumeratorInLowercase) {
     EXPECT_EQ(engine::core::severity_string(Severity::Trace), "trace");
     EXPECT_EQ(engine::core::severity_string(Severity::Debug), "debug");
@@ -34,10 +29,9 @@ TEST(SeverityString, SpellsEveryEnumeratorInLowercase) {
     EXPECT_EQ(engine::core::severity_string(Severity::Error), "error");
 }
 
-// --- format_record ----------------------------------------------------------
+// Record formatting.
 
-// format_record is a pure function of its record, so this case needs no
-// logger and no sink.
+// Formatting depends only on the record; no logger or sink is needed.
 TEST(FormatRecord, RendersSeverityCategoryMessageAndLocation) {
     auto const loc{std::source_location::current()};
     LogRecord record{Severity::Info, kSandbox, "window created", loc};
@@ -49,7 +43,7 @@ TEST(FormatRecord, RendersSeverityCategoryMessageAndLocation) {
     EXPECT_EQ(output, expected);
 }
 
-// --- CaptureSink ------------------------------------------------------------
+// CaptureSink.
 
 TEST(CaptureSink, StoresTheFormattedLine) {
     CaptureSink sink;
@@ -76,7 +70,7 @@ TEST(CaptureSink, CopiesTheMessageOutOfATemporary) {
     EXPECT_EQ(sink.lines()[0], expected);
 }
 
-// --- Logger ----------------------------------------------------------------
+// Logger.
 TEST(Logger, WritesAFormattedRecordToItsSink) {
     CaptureSink sink;
     Logger logger{sink, Severity::Info};
@@ -91,10 +85,8 @@ TEST(Logger, WritesAFormattedRecordToItsSink) {
     EXPECT_EQ(sink.lines()[0], expected);
 }
 
-// The location argument is omitted on purpose: the defaulted
-// std::source_location::current() is the thing under test. Passing loc here
-// would make the case pass even if log() captured the location in its own
-// body, which would report logger.hpp for every message in the engine.
+// Omit the location to check that the default reports this file's call site.
+// Capturing it inside log() would report logger.hpp instead.
 TEST(Logger, DefaultsLocationToTheCallSite) {
     CaptureSink sink;
     Logger logger{sink, Severity::Info};
@@ -123,21 +115,17 @@ TEST(Logger, PassesMessagesAboveItsThreshold) {
     EXPECT_EQ(sink.lines().size(), 1U);
 }
 
-// Two loggers with different thresholds, both alive at once. This is the
-// no-singleton proof. A shared sink shows up as a record in the wrong buffer,
-// and a shared threshold shows up as a record filtered by the other logger's
-// setting rather than its own.
+// Each logger must use its own sink and threshold.
+// Shared state would put a message in the wrong buffer or filter it incorrectly.
 TEST(Logger, TwoLoggersDoNotObserveEachOther) {
     CaptureSink info_sink;
     Logger info_logger{info_sink, Severity::Info};
     CaptureSink warn_sink;
     Logger warn_logger{warn_sink, Severity::Warn};
 
-    // Info clears info_logger's threshold but not warn_logger's. A single
-    // shared threshold set to Warn would drop this line.
+    // A shared Warn threshold would wrongly drop this message.
     info_logger.log(Severity::Info, kSandbox, "info only");
-    // Below warn_logger's own threshold. A shared threshold set to Info would
-    // let this line through into warn_sink.
+    // A shared Info threshold would wrongly keep this message.
     warn_logger.log(Severity::Info, kSandbox, "below warn threshold");
     warn_logger.log(Severity::Error, kSandbox, "warn only");
 

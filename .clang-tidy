@@ -1,6 +1,4 @@
-# Every header in this repository opens with `#pragma once`, so
-# portability-avoid-pragma-once fires on all of them. Subtracting it here
-# keeps the rest of portability-* useful.
+# Allow the repo's #pragma once convention while keeping other portability checks.
 Checks: >
   -*,
   bugprone-*,
@@ -22,9 +20,8 @@ Checks: >
   readability-redundant-*,
   readability-static-accessed-through-instance
 WarningsAsErrors: ''
-# Anchored on a directory the repository owns. An unanchored 'engine/.*' also
-# matches the '-engine/' in this checkout's own root path, which let every
-# fetched googletest header through the filter.
+# Match source directories explicitly: 'engine/.*' also matches the checkout name
+# ending in '-engine/', which would include fetched GoogleTest headers.
 HeaderFilterRegex: '.*/(engine/include|apps|tests)/.*'
 ExcludeHeaderFilterRegex: '.*/_deps/.*'
 FormatStyle: file

@@ -1,12 +1,8 @@
-# clangd cannot find the compilation database on its own: it only searches the
-# file's own directory, each ancestor, and a `build/` child of those. Our presets
-# build out-of-source under out/build/<preset>/, so point clangd at one explicitly.
-# Switch the path here when you switch presets.
+# Point clangd to the preset's compilation database under out/build/.
+# Update this path when switching presets; clangd does not find it automatically.
 CompileFlags:
   CompilationDatabase: out/build/linux-gcc-debug
-  # clangd parses GCC's compilation database with Clang. Ignore GCC's contracts
-  # flag here; the real build still gets it from cmake/Contracts.cmake.
-  # Clang cannot parse contract syntax yet, so those expressions will still be
-  # marked as errors in the editor.
+  # Ignore GCC's contracts flag in the editor; the build still uses it.
+  # This does not teach Clang to parse contract expressions, which still show errors.
   Remove:
     - -fcontracts

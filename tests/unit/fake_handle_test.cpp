@@ -1,7 +1,5 @@
 // Tests for FakeDriver and FakeHandle.
-//
-// Each test creates its own driver so the counters start at zero.
-// FakeHandle tests use those counters to verify that handles are closed.
+// Each test uses a fresh driver and checks its open/close counts.
 #include <engine/core/fake_handle.hpp>
 #include <gtest/gtest.h>
 #include <type_traits>
@@ -12,13 +10,13 @@ using engine::core::fake_open;
 using engine::core::FakeDriver;
 using engine::core::FakeHandle;
 
-// A copy makes two owners of one id, and both destructors close it.
+// Copying would close the same id twice.
 static_assert(!std::is_copy_constructible_v<FakeHandle>);
 static_assert(!std::is_copy_assignable_v<FakeHandle>);
 
-// --- FakeDriver: id issuance ------------------------------------------------
+// FakeDriver: issue ids.
 
-// ID 0 is reserved for an empty FakeHandle, so real handles start at 1.
+// Id 0 means empty; valid ids start at 1.
 TEST(FakeDriver, OpenIssuesDistinctIdsStartingAtOne) {
     FakeDriver driver;
 
@@ -27,7 +25,7 @@ TEST(FakeDriver, OpenIssuesDistinctIdsStartingAtOne) {
     EXPECT_EQ(driver.open_count, 2u);
 }
 
-// --- FakeDriver: close accounting -------------------------------------------
+// FakeDriver: count closes.
 
 TEST(FakeDriver, CloseIncrementsCloseCount) {
     FakeDriver driver;
@@ -39,8 +37,7 @@ TEST(FakeDriver, CloseIncrementsCloseCount) {
     EXPECT_EQ(driver.close_count, before_close + 1);
 }
 
-// IDs are retired on close, never recycled. A stale ID must remain invalid
-// so use-after-close cannot accidentally target a new live handle.
+// Reusing an id could make an old handle refer to a new resource.
 TEST(FakeDriver, OpenDoesNotReuseIds) {
     FakeDriver driver;
 
@@ -51,10 +48,9 @@ TEST(FakeDriver, OpenDoesNotReuseIds) {
     EXPECT_NE(first, second);
 }
 
-// --- FakeHandle: destruction ------------------------------------------------
+// FakeHandle: destruction.
 
-// Code that holds a FakeHandle never calls fake_close itself, so it cannot
-// skip the close on an early return.
+// The destructor closes the handle, including on early returns.
 TEST(FakeHandle, DestructionClosesIdOnce) {
     FakeDriver driver;
     {
@@ -64,7 +60,7 @@ TEST(FakeHandle, DestructionClosesIdOnce) {
     EXPECT_EQ(driver.close_count, 1u);
 }
 
-// --- FakeHandle: move construction ------------------------------------------
+// FakeHandle: move construction.
 
 TEST(FakeHandle, MoveConstructionTransfersOwnership) {
     FakeDriver driver;
@@ -72,7 +68,7 @@ TEST(FakeHandle, MoveConstructionTransfersOwnership) {
         FakeHandle source{driver};
         FakeHandle moved{std::move(source)};
 
-        // Reading the moved-from handle is the assertion: the move must empty it.
+        // Check that moving leaves the source empty.
         // NOLINTNEXTLINE(bugprone-use-after-move,clang-analyzer-cplusplus.Move)
         EXPECT_FALSE(source.is_valid());
         EXPECT_TRUE(moved.is_valid());
@@ -80,7 +76,7 @@ TEST(FakeHandle, MoveConstructionTransfersOwnership) {
     EXPECT_EQ(driver.close_count, 1u);
 }
 
-// --- FakeHandle: move assignment --------------------------------------------
+// FakeHandle: move assignment.
 
 TEST(FakeHandle, MoveAssignmentClosesTheTargetsOldId) {
     FakeDriver driver;
@@ -89,7 +85,7 @@ TEST(FakeHandle, MoveAssignmentClosesTheTargetsOldId) {
         FakeHandle moved{driver};
         moved = std::move(source);
 
-        // Reading the moved-from handle is the assertion: the move must empty it.
+        // Check that moving leaves the source empty.
         // NOLINTNEXTLINE(bugprone-use-after-move,clang-analyzer-cplusplus.Move)
         EXPECT_FALSE(source.is_valid());
         EXPECT_TRUE(moved.is_valid());
@@ -101,7 +97,7 @@ TEST(FakeHandle, SelfMoveAssignmentKeepsTheHandleValid) {
     FakeDriver driver;
     {
         FakeHandle source{driver};
-        FakeHandle& alias = source; // no compiler warning
+        FakeHandle& alias = source; // Test self-move without a compiler warning.
 
         source = std::move(alias);
 
@@ -110,7 +106,7 @@ TEST(FakeHandle, SelfMoveAssignmentKeepsTheHandleValid) {
     EXPECT_EQ(driver.close_count, 1u);
 }
 
-// --- FakeHandle: reset ------------------------------------------------------
+// FakeHandle: reset.
 
 TEST(FakeHandle, ResetClosesValidHandle) {
     FakeDriver driver;
@@ -148,7 +144,7 @@ TEST(FakeHandle, ResetTwiceOnlyClosesHandleOnce) {
     }
 }
 
-// --- FakeHandle: empty state ------------------------------------------------
+// FakeHandle: empty state.
 
 TEST(FakeHandle, EmptyHandleClosesNothing) {
     FakeDriver driver;
@@ -159,7 +155,7 @@ TEST(FakeHandle, EmptyHandleClosesNothing) {
     EXPECT_EQ(driver.close_count, 0u);
 }
 
-// --- FakeHandle: get --------------------------------------------------------
+// FakeHandle: read the id.
 
 TEST(FakeHandle, GetReturnsTheOwnedId) {
     FakeDriver driver;

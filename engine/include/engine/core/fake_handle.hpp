@@ -32,8 +32,7 @@ class FakeHandle {
     FakeHandle(const FakeHandle&) = delete;
     auto operator=(const FakeHandle&) -> FakeHandle& = delete;
 
-    // A moved-from handle is left in the default-constructed state, so
-    // releasing it is a no-op and the stolen id is closed exactly once.
+    // Empty the source so only the new owner closes the id.
     FakeHandle(FakeHandle&& other) noexcept : driver_{other.driver_}, id_{other.id_} {
         other.id_ = 0;
         other.driver_ = nullptr;

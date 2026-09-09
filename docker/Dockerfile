@@ -1,13 +1,7 @@
 # syntax=docker/dockerfile:1.7
 
-# GCC 17 has not cut a stable release yet -- it is trunk-only, dated
-# snapshots -- so there is no published `gcc:17` image to pull the way
-# `gcc:16.1.0` worked before. This stage bootstraps a native
-# x86_64-linux-gnu GCC 17 trunk snapshot from source on the same Debian
-# trixie base the old gcc:16.1.0 image used, so the apt package names below
-# stay unchanged. Bump GCC_SNAPSHOT to track a newer trunk date; unlike a
-# numbered release, this pin does not stop moving on its own and should be
-# revisited once GCC 17 actually ships.
+# Build native GCC from a dated GCC 17 snapshot on Debian trixie.
+# Change GCC_SNAPSHOT to update the compiler; revisit the pin for a stable release.
 FROM debian:trixie AS linux-gcc-builder
 
 ARG GCC_SNAPSHOT=17-20260727
@@ -34,12 +28,8 @@ RUN apt-get update \
 
 WORKDIR /tmp/toolchain
 
-# No --disable-bootstrap: the default `make` target does a 3-stage build
-# where stage 2 recompiles the compiler with itself and diffs the result
-# against stage 3, so a trunk miscompilation fails this image build instead
-# of silently shipping a broken compiler. The mingw cross toolchain built by
-# docker/Dockerfile.mingw-from-source cannot get this check for free -- a
-# cross compiler has no host to bootstrap against.
+# Keep GCC's three-stage bootstrap: comparing stages 2 and 3 checks for compiler
+# miscompilation. The MinGW cross build cannot use this native bootstrap check.
 RUN curl --fail --location --retry 3 \
         "https://gcc.gnu.org/pub/gcc/snapshots/${GCC_SNAPSHOT}/gcc-${GCC_SNAPSHOT}.tar.xz" \
         --output gcc.tar.xz \
@@ -63,41 +53,23 @@ RUN curl --fail --location --retry 3 \
         | g++ -std=c++26 -x c++ - -c -o /tmp/cpp26-test.o \
     && rm -f /tmp/cpp26-test.o
 
-# Native Linux build environment. Wayland dev packages match the baseline
-# docs/BUILDING.md documents for a host Linux build; no GLFW or X11 packages,
-# since ADR 0006 has no GLFW dependency and XCB is not implemented yet.
+# Native Linux build environment with the Wayland dependencies in docs/BUILDING.md.
+# ADR 0006 uses native backends; XCB dependencies will come with its implementation.
 FROM debian:trixie AS linux
 
 COPY --from=linux-gcc-builder /usr/local /usr/local
 
-# GCC's own runtime shared libraries (libstdc++, libgcc_s) install under
-# /usr/local/lib64 on x86_64. Registering that with ldconfig is not enough:
-# apt packages below pull in Debian trixie's own libstdc++6 (matching its
-# system GCC 14), and ldconfig's cache does not reliably prefer a newly
-# registered directory over the default system search path -- binaries
-# linked against GCC 17's libstdc++ picked up the older system one instead
-# and failed at runtime with a missing GLIBCXX symbol version. LD_LIBRARY_PATH
-# is searched before the ld.so cache, so it deterministically wins.
+# Prefer GCC 17's runtime libraries in /usr/local/lib64 to Debian's older copies.
+# ldconfig alone selected the older libstdc++ and caused GLIBCXX version errors;
+# LD_LIBRARY_PATH takes priority over that cache.
 RUN echo /usr/local/lib64 > /etc/ld.so.conf.d/gcc17-trunk.conf \
     && ldconfig
 
 ENV PATH=/usr/local/bin:${PATH} \
     LD_LIBRARY_PATH=/usr/local/lib64
 
-# The old gcc:16.1.0 base image came with a complete, ready-to-use toolchain
-# (assembler, linker, glibc headers). A bare debian:trixie base plus our own
-# /usr/local from linux-gcc-builder does not, so this stage has to supply
-# what that image used to bring for free:
-#   - binutils: as/ld/ar. cc1plus emits assembly; without `as` there is no
-#     way to turn it into an object file.
-#   - libc6-dev: glibc headers (features.h, stdio.h, ...) that any compile
-#     needs; debian:trixie's base image only carries the runtime library.
-#   - libgmp10/libisl23/libmpc3/libmpfr6/libzstd1: cc1plus itself is
-#     dynamically linked against these (Graphite loop optimization, LTO/debug
-#     info compression) because the linux-gcc-builder stage's -dev packages
-#     were on the library search path at configure time. Their runtime-only
-#     counterparts are enough to run the already-built compiler; without them
-#     cc1plus fails to start.
+# The copied compiler still needs binutils (assembler/linker), libc6-dev (C headers),
+# and its runtime libraries: libgmp10, libisl23, libmpc3, libmpfr6, and libzstd1.
 RUN apt-get update \
     && DEBIAN_FRONTEND=noninteractive apt-get install --no-install-recommends -y \
         binutils \
@@ -127,15 +99,11 @@ ENV CCACHE_DIR=/ccache \
     HOME=/tmp
 WORKDIR /workspace
 
-# Windows cross-compile environment: an x86_64-w64-mingw32 GCC 17 trunk
-# toolchain running on Linux. The published ghcr.io/nathan-baggs/custom-
-# mingw64 image tracks a released GCC, so it cannot provide GCC 17 either --
-# this stage always builds from docker/Dockerfile.mingw-from-source instead
-# of falling back to a prebuilt image (see docs/BUILDING.md). That image vendors
-# Vulkan-Headers into the target sysroot, so <vulkan/vulkan.h> compiles here, but
-# there is still no Windows Vulkan import library or vulkan-1.dll -- the
-# docker-windows-mingw-debug preset builds scaffold-only (ENGINE_REQUIRE_VULKAN_SDK=OFF)
-# until a lesson decides the Vulkan linking/loading strategy for cross builds.
+# Build Windows binaries on Linux using the local GCC 17 MinGW image.
+# Build that base with docker/Dockerfile.mingw-from-source; see docs/BUILDING.md.
+# It includes Vulkan headers, but no Windows import library or vulkan-1.dll.
+# The docker-windows-mingw-debug preset uses ENGINE_REQUIRE_VULKAN_SDK=OFF until
+# a lesson defines how cross builds will link or load Vulkan.
 FROM cpp26-vulkan-engine-mingw:17-trunk AS windows-mingw
 
 RUN apt-get update \

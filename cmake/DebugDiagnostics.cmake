@@ -1,11 +1,7 @@
 include_guard(GLOBAL)
 
 function(engine_enable_debug_diagnostics target_name)
-    # CMake's own Debug config only guarantees "-g" for GCC; it does not pick an
-    # optimization level or a frame-pointer policy. -Og keeps stepping and local
-    # inspection sane (unlike -O0, it still runs the passes GDB's location lists
-    # depend on being self-consistent). -g3 adds macro definitions to DWARF.
-    # -fno-omit-frame-pointer keeps backtraces reliable without relying on
-    # CFI-only unwinding.
+    # Extend CMake's default -g: -Og helps debugging, -g3 includes macro definitions,
+    # and keeping frame pointers helps produce reliable backtraces.
     target_compile_options(${target_name} INTERFACE "$<$<CONFIG:Debug>:-Og;-g3;-fno-omit-frame-pointer>")
 endfunction()

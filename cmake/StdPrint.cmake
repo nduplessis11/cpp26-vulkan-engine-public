@@ -5,12 +5,7 @@ function(engine_enable_std_print target_name)
         return()
     endif()
 
-    # GCC ships std::print's Windows console-writing helpers (__open_terminal,
-    # __write_to_terminal) in the separate "experimental" archive until they graduate
-    # into libstdc++.a proper -- the same mechanism historically used for
-    # std::stacktrace. Without this, std::print()/std::println() to stdout/stderr
-    # fail at link time with "undefined reference to std::__open_terminal". Confirmed
-    # missing on both a local prebuilt GCC 16.1 mingw install and this project's own
-    # from-source GCC 17 trunk cross-toolchain; -lstdc++exp fixes both.
+    # These MinGW toolchains need stdc++exp for std::print/println's console helpers.
+    # Without it, linking fails on std::__open_terminal. Verified on GCC 16.1 and 17 trunk.
     target_link_libraries(${target_name} INTERFACE stdc++exp)
 endfunction()

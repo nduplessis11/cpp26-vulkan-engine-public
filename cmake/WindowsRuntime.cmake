@@ -5,8 +5,6 @@ function(engine_enable_static_windows_runtime target_name)
         return()
     endif()
 
-    # Statically linking the MinGW runtime means the produced .exe depends only on
-    # core Windows DLLs -- nothing to stage next to it and nothing to accidentally
-    # pick up from whichever MSYS2 install happens to be on PATH.
+    # Link the MinGW runtime into the executable so it needs no separate MinGW DLLs.
     target_link_options(${target_name} INTERFACE -static -static-libgcc -static-libstdc++)
 endfunction()
