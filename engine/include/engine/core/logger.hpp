@@ -1,11 +1,14 @@
 #pragma once
 
 #include <cstdint>
+#include <cstdio> // IWYU pragma: keep
 #include <format>
+#include <print>
 #include <source_location>
 #include <span>
 #include <string>
 #include <string_view>
+#include <system_error>
 #include <utility>
 #include <vector>
 
@@ -52,6 +55,18 @@ auto inline format_record(LogRecord const& record) -> std::string {
 struct Sink {
     virtual ~Sink() = default;
     virtual auto write(LogRecord const&) -> void = 0;
+};
+
+class StderrSink : public Sink {
+  public:
+    auto write(LogRecord const& record) -> void override {
+        auto const line = format_record(record);
+        try {
+            std::println(stderr, "{}", line);
+        } catch (std::system_error const&) { // NOLINT(bugprone-empty-catch)
+            // Ignore write failures; reporting them would use the same broken output.
+        }
+    }
 };
 
 class CaptureSink : public Sink {
