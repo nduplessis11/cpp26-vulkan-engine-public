@@ -3,6 +3,7 @@
         configure-docker-linux-asan build-docker-linux-asan test-docker-linux-asan \
         configure-docker-windows build-docker-windows \
         build-scratchpad run-scratchpad \
+        configure-clang-tidy lint \
         ccache-stats clean
 
 # Under Windows Git Bash/MSYS, `id -u` reports a Windows-mapped UID that Docker
@@ -67,6 +68,24 @@ configure-docker-windows:
 
 build-docker-windows: configure-docker-windows
 	$(COMPOSE) run --rm windows-mingw cmake --build --preset docker-windows-mingw-debug
+
+# clang-tidy runs on the host, not in a container: docker/Dockerfile installs no
+# clang, and the image's from-source GCC 17 libstdc++ is newer than any released
+# clang can parse. The preset exists to produce a compile_commands.json clang can
+# actually read -- it turns contracts off, because clang rejects -fcontracts and
+# every translation unit carrying it fails to parse.
+configure-clang-tidy:
+	cmake --preset linux-clang-tidy
+
+# run-clang-tidy reads compile_commands.json and analyzes every file that matches,
+# every time. Driving clang-tidy through CMAKE_CXX_CLANG_TIDY instead would tie it
+# to compilation, and `ninja: no work to do` would silently report nothing.
+# The regex keeps the pass on files this repository owns; fetched googletest
+# sources are in compile_commands.json too.
+LINT_SOURCES := ^$(CURDIR)/(engine|apps|tests)/
+
+lint: configure-clang-tidy
+	run-clang-tidy -p out/build/linux-clang-tidy -quiet "$(LINT_SOURCES)"
 
 ccache-stats:
 	$(COMPOSE) run --rm linux ccache --show-stats

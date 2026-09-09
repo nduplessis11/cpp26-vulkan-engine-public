@@ -68,6 +68,15 @@
       }
     },
     {
+      "name": "linux-clang-tidy",
+      "displayName": "Linux clang-tidy lint configure (host, contracts off)",
+      "description": "Produces a compile_commands.json that clang can parse, for `make lint`. Contracts are off because clang rejects GCC's -fcontracts and every translation unit carrying it fails to parse. Configure only -- building this preset is not the lint pass and its binaries are not the ones to test.",
+      "inherits": "linux-gcc-debug",
+      "cacheVariables": {
+        "ENGINE_ENABLE_CONTRACTS": false
+      }
+    },
+    {
       "name": "docker-base",
       "hidden": true,
       "inherits": "base",

@@ -17,9 +17,10 @@
 - Use `enum class`, `[[nodiscard]]`, `noexcept`, `std::span`, and `std::string_view` where semantics fit.
 - Prefer scoped owners and explicit reset or release operations.
 - Keep headers self-contained and minimize includes.
-- Use `#pragma once`.
+- Use `#pragma once`. `.clang-tidy` subtracts `portability-avoid-pragma-once` for this reason.
 - Do not suppress a warning without documenting why the code is correct.
 - Avoid macros except narrow platform, compiler, logging, assertion, or generated metadata boundaries.
+- Run `make lint` before asking for a diff review. No test preset enables clang-tidy, so nothing else runs the checks in `.clang-tidy`. See `docs/BUILDING.md`.
 
 ## Vulkan
 

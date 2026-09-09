@@ -36,5 +36,14 @@ function(engine_fetch_test_dependencies)
         GIT_REPOSITORY https://github.com/google/googletest.git
         GIT_TAG d89aac5f0dd4021198d903d39de16f896726de21 # v1.18.x branch head
     )
+    # clang-tidy has nothing useful to say about a pinned upstream dependency,
+    # and CMAKE_CXX_CLANG_TIDY would otherwise apply to googletest's own .cc
+    # files. .clang-tidy's HeaderFilterRegex cannot suppress those: it filters
+    # headers, and a translation unit's main source is always analyzed.
+    set(ENGINE_SAVED_CLANG_TIDY "${CMAKE_CXX_CLANG_TIDY}")
+    unset(CMAKE_CXX_CLANG_TIDY)
+
     FetchContent_MakeAvailable(googletest)
+
+    set(CMAKE_CXX_CLANG_TIDY "${ENGINE_SAVED_CLANG_TIDY}")
 endfunction()
