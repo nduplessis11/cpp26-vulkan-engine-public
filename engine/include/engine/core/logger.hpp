@@ -71,7 +71,7 @@ class CaptureSink : public Sink {
 
 class Logger {
   public:
-    Logger(Sink& sink, Severity threshold) : sink_{sink}, threshold_{threshold} {}
+    explicit Logger(Sink& sink, Severity threshold) : sink_{sink}, threshold_{threshold} {}
 
     auto log(Severity severity, Category category, std::string_view message,
              std::source_location location = std::source_location::current()) -> void {

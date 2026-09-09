@@ -8,6 +8,7 @@
 #include <gtest/gtest.h>
 #include <source_location>
 #include <string>
+#include <type_traits>
 
 using engine::core::CaptureSink;
 using engine::core::Category;
@@ -16,6 +17,22 @@ using engine::core::LogRecord;
 using engine::core::Severity;
 
 constexpr Category kSandbox{"sandbox"};
+
+static_assert(!std::is_default_constructible_v<Logger>,
+              "A default-constructible Logger invites a global instance. "
+              "Construct each one with the sink it writes to.");
+
+// --- severity_string --------------------------------------------------------
+
+// One row per enumerator. format_record only ever renders one severity, so
+// without this a typo in any other branch ships green.
+TEST(SeverityString, SpellsEveryEnumeratorInLowercase) {
+    EXPECT_EQ(engine::core::severity_string(Severity::Trace), "trace");
+    EXPECT_EQ(engine::core::severity_string(Severity::Debug), "debug");
+    EXPECT_EQ(engine::core::severity_string(Severity::Info), "info");
+    EXPECT_EQ(engine::core::severity_string(Severity::Warn), "warn");
+    EXPECT_EQ(engine::core::severity_string(Severity::Error), "error");
+}
 
 // --- format_record ----------------------------------------------------------
 
@@ -106,13 +123,27 @@ TEST(Logger, PassesMessagesAboveItsThreshold) {
     EXPECT_EQ(sink.lines().size(), 1U);
 }
 
-// Remaining cases for the Logger:
-//
-// - Two independent loggers. Two CaptureSinks and two Loggers with different
-//   thresholds in one test body. A record sent through A lands in A's buffer
-//   and nowhere else, and B's threshold does not change what A emits. Any
-//   design with a hidden shared instance fails this, which is what makes it
-//   the no-singleton proof.
-// - static_assert(!std::is_default_constructible_v<Logger>) at namespace
-//   scope, so every call site must name a logger it was handed. Needs
-//   <type_traits>.
+// Two loggers with different thresholds, both alive at once. This is the
+// no-singleton proof. A shared sink shows up as a record in the wrong buffer,
+// and a shared threshold shows up as a record filtered by the other logger's
+// setting rather than its own.
+TEST(Logger, TwoLoggersDoNotObserveEachOther) {
+    CaptureSink info_sink;
+    Logger info_logger{info_sink, Severity::Info};
+    CaptureSink warn_sink;
+    Logger warn_logger{warn_sink, Severity::Warn};
+
+    // Info clears info_logger's threshold but not warn_logger's. A single
+    // shared threshold set to Warn would drop this line.
+    info_logger.log(Severity::Info, kSandbox, "info only");
+    // Below warn_logger's own threshold. A shared threshold set to Info would
+    // let this line through into warn_sink.
+    warn_logger.log(Severity::Info, kSandbox, "below warn threshold");
+    warn_logger.log(Severity::Error, kSandbox, "warn only");
+
+    ASSERT_EQ(info_sink.lines().size(), 1U);
+    ASSERT_EQ(warn_sink.lines().size(), 1U);
+
+    EXPECT_TRUE(info_sink.lines()[0].starts_with("[info] sandbox: info only (logger_test.cpp:"));
+    EXPECT_TRUE(warn_sink.lines()[0].starts_with("[error] sandbox: warn only (logger_test.cpp:"));
+}
