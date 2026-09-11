@@ -6,3 +6,8 @@ CompileFlags:
   # This does not teach Clang to parse contract expressions, which still show errors.
   Remove:
     - -fcontracts
+    # CLion can still inject GCC macros with use.predefines enabled. Keep
+    # clion.clang.clangd.use.predefines=true and let Clang describe itself:
+    # GCC's floating-point feature macros break libstdc++ <format> in clangd.
+    - -imacros/clion_clangd_inmemory_directory/macros/*
+    - -fgnuc-version=*
