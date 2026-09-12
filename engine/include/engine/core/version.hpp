@@ -38,7 +38,7 @@ inline auto parse_version(std::string_view text) -> std::expected<Version, Versi
 
     // Each iteration starts at the next component, or at the end if it is missing.
     for (std::size_t i = 0; i < parts.size(); ++i) {
-        const auto [ptr, ec] = std::from_chars(cursor, last, parts[i]);
+        auto const [ptr, ec] = std::from_chars(cursor, last, parts[i]);
 
         if (ec != std::errc{}) {
             return std::unexpected{VersionParseError::MalformedVersion};

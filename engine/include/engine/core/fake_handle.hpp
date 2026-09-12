@@ -29,8 +29,8 @@ class FakeHandle {
         reset();
     }
 
-    FakeHandle(const FakeHandle&) = delete;
-    auto operator=(const FakeHandle&) -> FakeHandle& = delete;
+    FakeHandle(FakeHandle const&) = delete;
+    auto operator=(FakeHandle const&) -> FakeHandle& = delete;
 
     // Empty the source so only the new owner closes the id.
     FakeHandle(FakeHandle&& other) noexcept : driver_{other.driver_}, id_{other.id_} {

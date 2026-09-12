@@ -136,4 +136,23 @@ TEST(Logger, TwoLoggersDoNotObserveEachOther) {
     EXPECT_TRUE(warn_sink.lines()[0].starts_with("[error] sandbox: warn only (logger_test.cpp:"));
 }
 
-// TODO(human): write the first failing test for Logger::vlog here.
+TEST(Logger, VlogFormatsArgumentsIntoItsSink) {
+    CaptureSink sink;
+    Logger logger{sink, Severity::Info};
+
+    int frame = 7;
+    logger.vlog(Severity::Info, kSandbox, "frame {}", std::make_format_args(frame));
+
+    ASSERT_EQ(sink.lines().size(), 1U);
+    EXPECT_TRUE(sink.lines()[0].starts_with("[info] sandbox: frame 7 (logger_test.cpp:"));
+}
+
+TEST(Logger, FormatsArgumentsIntoItsSink) {
+    CaptureSink sink;
+    Logger logger{sink, Severity::Info};
+
+    logger.log(Severity::Info, kSandbox, "frame {} of {}", 7, 60);
+
+    ASSERT_EQ(sink.lines().size(), 1U);
+    EXPECT_TRUE(sink.lines()[0].starts_with("[info] sandbox: frame 7 of 60 (logger_test.cpp:"));
+}
