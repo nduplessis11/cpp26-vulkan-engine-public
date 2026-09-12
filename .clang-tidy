@@ -1,3 +1,4 @@
+# Allow the repo's #pragma once convention while keeping other portability checks.
 Checks: >
   -*,
   bugprone-*,
@@ -5,10 +6,12 @@ Checks: >
   cppcoreguidelines-avoid-goto,
   cppcoreguidelines-init-variables,
   cppcoreguidelines-narrowing-conversions,
+  google-explicit-constructor,
   modernize-use-nullptr,
   modernize-use-trailing-return-type,
   performance-*,
   portability-*,
+  -portability-avoid-pragma-once,
   readability-const-return-type,
   readability-container-size-empty,
   readability-duplicate-include,
@@ -17,5 +20,8 @@ Checks: >
   readability-redundant-*,
   readability-static-accessed-through-instance
 WarningsAsErrors: ''
-HeaderFilterRegex: 'engine/.*'
+# Match source directories explicitly: 'engine/.*' also matches the checkout name
+# ending in '-engine/', which would include fetched GoogleTest headers.
+HeaderFilterRegex: '.*/(engine/include|apps|tests)/.*'
+ExcludeHeaderFilterRegex: '.*/_deps/.*'
 FormatStyle: file

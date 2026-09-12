@@ -64,8 +64,7 @@ if(ENGINE_BUILD_TESTS)
     include(CTest)
     enable_testing()
 
-    # Fetched here rather than in tests/CMakeLists.txt so the dependency is
-    # visible at the top level and is skipped entirely when tests are off.
+    # Declare test dependencies here and fetch them only when tests are enabled.
     include(Dependencies)
     include(TestHelpers)
     engine_fetch_test_dependencies()

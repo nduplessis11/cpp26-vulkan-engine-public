@@ -60,6 +60,23 @@
       }
     },
     {
+      "name": "linux-gcc-asan",
+      "displayName": "Linux GCC Debug with AddressSanitizer and UBSan",
+      "inherits": "linux-gcc-debug",
+      "cacheVariables": {
+        "ENGINE_ENABLE_SANITIZERS": true
+      }
+    },
+    {
+      "name": "linux-clang-tidy",
+      "displayName": "Linux clang-tidy lint configure (host, contracts off)",
+      "description": "Produces a compile_commands.json that clang can parse, for `make lint`. Contracts are off because clang rejects GCC's -fcontracts and every translation unit carrying it fails to parse. Configure only -- building this preset is not the lint pass and its binaries are not the ones to test.",
+      "inherits": "linux-gcc-debug",
+      "cacheVariables": {
+        "ENGINE_ENABLE_CONTRACTS": false
+      }
+    },
+    {
       "name": "docker-base",
       "hidden": true,
       "inherits": "base",
@@ -85,6 +102,14 @@
       }
     },
     {
+      "name": "docker-linux-gcc-asan",
+      "displayName": "Docker: Linux GCC Debug with AddressSanitizer and UBSan",
+      "inherits": "docker-linux-gcc-debug",
+      "cacheVariables": {
+        "ENGINE_ENABLE_SANITIZERS": true
+      }
+    },
+    {
       "name": "docker-windows-mingw-debug",
       "displayName": "Docker: Windows MinGW cross-compile Debug (scaffold-only)",
       "inherits": "docker-base",
@@ -103,6 +128,10 @@
       "configurePreset": "linux-gcc-debug"
     },
     {
+      "name": "linux-gcc-asan",
+      "configurePreset": "linux-gcc-asan"
+    },
+    {
       "name": "windows-gcc-debug",
       "configurePreset": "windows-gcc-debug"
     },
@@ -115,6 +144,10 @@
       "configurePreset": "docker-linux-gcc-debug"
     },
     {
+      "name": "docker-linux-gcc-asan",
+      "configurePreset": "docker-linux-gcc-asan"
+    },
+    {
       "name": "docker-windows-mingw-debug",
       "configurePreset": "docker-windows-mingw-debug"
     }
@@ -123,6 +156,13 @@
     {
       "name": "linux-gcc-debug",
       "configurePreset": "linux-gcc-debug",
+      "output": {
+        "outputOnFailure": true
+      }
+    },
+    {
+      "name": "linux-gcc-asan",
+      "configurePreset": "linux-gcc-asan",
       "output": {
         "outputOnFailure": true
       }
@@ -144,6 +184,13 @@
     {
       "name": "docker-linux-gcc-debug",
       "configurePreset": "docker-linux-gcc-debug",
+      "output": {
+        "outputOnFailure": true
+      }
+    },
+    {
+      "name": "docker-linux-gcc-asan",
+      "configurePreset": "docker-linux-gcc-asan",
       "output": {
         "outputOnFailure": true
       }

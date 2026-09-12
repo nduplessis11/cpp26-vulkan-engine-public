@@ -21,10 +21,8 @@ function(engine_enable_contracts target_name)
         return()
     endif()
 
-    # Debug-only: this is a checked-invariant facility (see DebugDiagnostics.cmake for
-    # the same CONFIG:Debug convention), and the preview's default "enforce" semantic
-    # terminates on violation, so it belongs in the same debug-time checking category
-    # as assert().
+    # Enable contracts in Debug, like assert(). The preview's default "enforce"
+    # mode terminates the program when a contract fails.
     target_compile_options(${target_name} INTERFACE "$<$<CONFIG:Debug>:-fcontracts>")
     message(STATUS "GCC contracts preview enabled for Debug builds (-fcontracts): pre()/post()/contract_assert() are live.")
 endfunction()

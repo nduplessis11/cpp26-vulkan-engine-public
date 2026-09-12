@@ -1,2 +1,1 @@
-# Intentionally unused until lesson 030.
-# The learner will implement shader source to SPIR-V build rules here.
+# Lesson 030: add build rules to compile shaders to SPIR-V here.

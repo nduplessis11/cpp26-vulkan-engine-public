@@ -79,6 +79,38 @@ safeguards, added by `cmake/DebugDiagnostics.cmake` and `cmake/CompilerChecks.cm
   `curriculum/lectures/002_choose-error-and-contract-conventions.md` for why this is
   still opt-in-by-flag rather than a standardized language feature.
 
+## Static analysis (clang-tidy)
+
+```bash
+make lint
+```
+
+This configures the `linux-clang-tidy` preset and then runs `run-clang-tidy` over the
+resulting `compile_commands.json`. A full pass takes about six seconds and needs no
+build.
+
+Four things about this setup are deliberate:
+
+- **`run-clang-tidy`, not `CMAKE_CXX_CLANG_TIDY`.** The `ENGINE_ENABLE_CLANG_TIDY`
+  option drives clang-tidy as part of compilation, which means an up-to-date build
+  tree reports `ninja: no work to do` and analyzes nothing. `run-clang-tidy` reads the
+  compilation database directly, so every invocation is a complete pass. Keep the
+  option for editor integration; use `make lint` to actually check the tree.
+- **Host, not Docker.** `docker/Dockerfile` installs no clang, and the image's
+  from-source GCC 17 libstdc++ is newer than any released clang can parse.
+- **Contracts off.** clang rejects GCC's `-fcontracts`, and every translation unit
+  carrying it fails to parse, so the preset sets `ENGINE_ENABLE_CONTRACTS=OFF`. The
+  preset is a configure step only; its binaries are not the ones to test against.
+- **Only files this repository owns.** `run-clang-tidy` takes a path regex, and the
+  Makefile passes one that keeps the pass inside `engine/`, `apps/`, and `tests/`.
+  Fetched googletest sources appear in `compile_commands.json` too, and `.clang-tidy`
+  cannot filter them out: `HeaderFilterRegex` filters *headers*, while a translation
+  unit's own source file is always analyzed.
+
+`WarningsAsErrors` is empty in `.clang-tidy`, so findings never fail anything. No
+build or test preset enables clang-tidy, so this is an on-demand pass rather than a
+cost every build pays.
+
 ## Docker (containerized builds)
 
 Two Linux containers give a reproducible build environment without installing

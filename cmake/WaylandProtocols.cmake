@@ -1,4 +1,2 @@
-# Intentionally unused until the Wayland lessons.
-# The learner will add a helper that locates wayland-scanner and
-# wayland-protocols, generates xdg-shell client code into the build tree,
-# and exposes it through a backend-only target.
+# Wayland lessons: use wayland-scanner and wayland-protocols to generate xdg-shell
+# client code in the build directory. Expose it only to the Wayland backend.

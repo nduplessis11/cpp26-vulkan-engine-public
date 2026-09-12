@@ -1,23 +1,13 @@
 # syntax=docker/dockerfile:1.7
-# Builds a Linux-hosted GCC 17 / MinGW-w64 cross toolchain. This follows the
-# same bootstrap sequence as the published ghcr.io/nathan-baggs/custom-mingw64
-# image (binutils, mingw headers, gcc stage 1, mingw crt + winpthreads, gcc
-# stage 2). GCC 17 has not cut a stable release, so there is no numbered
-# tarball to pin the way GCC 16.1.0 was; GCC_SNAPSHOT instead freezes a
-# specific dated trunk snapshot so that half of the toolchain still stops
-# moving under you. Required: docker/Dockerfile's windows-mingw stage builds
-# FROM the image tag produced here (see docs/BUILDING.md) -- there is no
-# published image with GCC 17 to fall back to the way there was for GCC 16.
+# Build a GCC 17 / MinGW-w64 toolchain that runs on Linux and targets Windows.
+# Order: binutils, MinGW headers, GCC stage 1, MinGW runtime and winpthreads,
+# then GCC stage 2. docker/Dockerfile uses this image; see docs/BUILDING.md.
 #
-# MINGW_REF tracks mingw-w64's master branch rather than the 14.0.0 release:
-# GCC 17 trunk enforces __stack_chk_guard as `uintptr_t` (upstream PR
-# c/121911), which the 14.0.0 release's `void *__stack_chk_guard` conflicts
-# with and fails to build. The fix landed on mingw-w64 master 2026-05-07
-# (commit 5d04f8f, "ssp: fix `__stack_chk_guard` type") but has not reached
-# a numbered release yet. Unlike GCC_SNAPSHOT this is a floating branch
-# name, not a frozen coordinate: `docker build --no-cache` can pick up a
-# different mingw-w64 state on a later rebuild. Re-pin to a release once
-# mingw-w64 cuts one that includes the fix.
+# GCC_SNAPSHOT pins a dated snapshot. MINGW_REF tracks master to include the
+# __stack_chk_guard type fix (mingw-w64 commit 5d04f8f, GCC PR c/121911).
+# Version 14.0.0 used void* where GCC 17 requires uintptr_t and failed to build.
+# Rebuilding without cache can change the MinGW revision. Pin a release once
+# one includes the fix.
 FROM ubuntu:24.04
 
 ARG TARGET=x86_64-w64-mingw32
@@ -25,21 +15,11 @@ ARG PREFIX=/usr/local
 ARG BINUTILS_VERSION=2.45
 ARG GCC_SNAPSHOT=17-20260727
 ARG MINGW_REF=master
-# Vulkan-Headers is header-only (no architecture-specific content), so a single tag
-# works for every target this image ever cross-compiles for. Pinned to a real,
-# published vulkan-sdk-sync tag rather than a moving branch. This provides only
-# #include <vulkan/vulkan.h> under the cross toolchain -- no Windows import library
-# and no vulkan-1.dll. Linking/loading strategy for the Windows cross build is a
-# separate, still-open decision (see docker/Dockerfile's windows-mingw stage).
+# Pin Vulkan headers for the target sysroot. This supplies neither a Windows
+# import library nor vulkan-1.dll; see docker/Dockerfile's windows-mingw stage.
 ARG VULKAN_HEADERS_REF=vulkan-sdk-1.4.357.0
-# Ubuntu 24.04's apt cmake package (3.28.x) predates GCC 16 in its per-compiler
-# C++ standard feature tables, so it rejects cxx_std_26 even though GCC 16
-# itself supports -std=c++26 fine. Pin a CMake release known to recognize it
-# (the same version the linux stage's Debian trixie apt package resolves to)
-# instead of trusting whatever the base distro currently ships. CMake's
-# per-compiler tables use >= version thresholds, so this same pin also
-# accepts GCC 17 trunk reporting itself as a newer version than any
-# threshold CMake 3.31.6 knows about.
+# Ubuntu 24.04's CMake 3.28 rejects cxx_std_26 for these GCC versions.
+# Pin 3.31.6, which recognizes support in GCC 16 and newer, including GCC 17 trunk.
 ARG CMAKE_VERSION=3.31.6
 
 ENV PATH=${PREFIX}/bin:${PATH} \
@@ -170,9 +150,8 @@ RUN cd build-gcc \
         | ${TARGET}-g++ -std=c++26 -x c++ - -c -o /tmp/cpp26-test.o \
     && rm -f /tmp/cpp26-test.o
 
-# Vendored last so bumping VULKAN_HEADERS_REF alone does not invalidate the
-# expensive binutils/mingw-crt/gcc layers above. Copied into the target sysroot
-# (not a generic host path) so CMAKE_FIND_ROOT_PATH_MODE_INCLUDE=ONLY resolves it.
+# Copy headers last to preserve cached toolchain builds when updating the tag.
+# Put them in the target sysroot so CMake's include search can find them.
 RUN curl --fail --location --retry 3 \
         "https://github.com/KhronosGroup/Vulkan-Headers/archive/refs/tags/${VULKAN_HEADERS_REF}.tar.gz" \
         --output vulkan-headers.tar.gz \
