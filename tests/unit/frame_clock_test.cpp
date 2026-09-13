@@ -25,10 +25,29 @@ constexpr FrameClockConfig kSandboxConfig{
 TEST(FrameClockAdvance, OneWholeStepRunsOneUpdate) {
     FrameClock frame_clock(kSandboxConfig);
 
-    const auto [steps, alpha] = frame_clock.advance(kSandboxConfig.fixed_step);
+    auto const [steps, alpha] = frame_clock.advance(10ms);
 
     EXPECT_EQ(steps, 1U);
 }
 
-// TODO(human): the second failing case — time left over survives the call.
-// Name it TEST(FrameClockAdvance, CarriesTheRemainderIntoTheNextCall).
+TEST(FrameClockAdvance, CarriesTheRemainderIntoTheNextCall) {
+    FrameClock frame_clock(kSandboxConfig);
+
+    auto const [first_steps, first_alpha] = frame_clock.advance(7ms);
+    auto const [second_steps, second_alpha] = frame_clock.advance(7ms);
+
+    EXPECT_EQ(first_steps, 0U);
+    EXPECT_EQ(second_steps, 1U);
+}
+
+TEST(FrameClockAdvance, AlphaIsTheFractionOfAStepLeftOver) {
+    FrameClock frame_clock(kSandboxConfig);
+
+    auto const [steps, alpha] = frame_clock.advance(13ms);
+
+    ASSERT_EQ(steps, 1U);
+    EXPECT_DOUBLE_EQ(alpha, 0.3);
+}
+
+// TODO(human): one elapsed duration long enough to run several whole steps.
+// Name it TEST(FrameClockAdvance, RunsOneStepPerWholeFixedStepOfElapsedTime).

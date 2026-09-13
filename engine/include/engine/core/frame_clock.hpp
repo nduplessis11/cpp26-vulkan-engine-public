@@ -23,17 +23,21 @@ class FrameClock {
     [[nodiscard]]
     auto advance(std::chrono::nanoseconds const elapsed) -> FrameBudget {
         std::size_t steps = 0;
-        std::chrono::nanoseconds remainder{elapsed};
-        while (remainder >= config_.fixed_step) {
-            remainder -= config_.fixed_step;
+        accumulator_ += elapsed;
+        while (accumulator_ >= config_.fixed_step) {
+            accumulator_ -= config_.fixed_step;
             steps++;
         }
 
-        return FrameBudget{.steps = steps, .alpha = 0};
+        auto const alpha{std::chrono::duration<double>{accumulator_} /
+                         std::chrono::duration<double>{config_.fixed_step}};
+
+        return FrameBudget{.steps = steps, .alpha = alpha};
     }
 
   private:
     FrameClockConfig config_;
+    std::chrono::nanoseconds accumulator_{0};
 };
 
 } // namespace engine::core
