@@ -70,14 +70,48 @@ safeguards, added by `cmake/DebugDiagnostics.cmake` and `cmake/CompilerChecks.cm
   compiler that isn't the `x86_64-w64-mingw32` toolchain. The configure log also prints
   the resolved compiler identity and version (`Compiler identity check passed: ...`) so
   you can confirm which GCC you actually built with.
-- **Contracts preview.** `ENGINE_ENABLE_CONTRACTS` (default `ON`, see
-  `cmake/Contracts.cmake`) probes for GCC's experimental `-fcontracts` support
-  (`check_cxx_compiler_flag`) and, if accepted, adds it to Debug builds only, so
-  `pre()`/`post()`/`contract_assert()` are live. If the resolved compiler doesn't accept
-  the flag (e.g. a GCC predating the 16.1 preview), configure prints a `WARNING` and
-  skips it rather than failing. Turn it off with `-DENGINE_ENABLE_CONTRACTS=OFF`. See
-  `curriculum/lectures/002_choose-error-and-contract-conventions.md` for why this is
-  still opt-in-by-flag rather than a standardized language feature.
+- **Language contracts.** `ENGINE_ENABLE_CONTRACTS` defaults to `ON`.
+  `cmake/Contracts.cmake` checks `__cpp_contracts` and compiles and links a sample
+  containing `pre`, `post`, and `contract_assert`. Configure fails if the probe
+  fails. Every build compiles and links with `-fcontracts`; Debug selects
+  `-fcontract-evaluation-semantic=enforce`, and other configurations select
+  `ignore`. `NDEBUG` does not control these checks. `ENGINE_ENABLE_CONTRACTS=OFF`
+  is reserved for the configure-only Clang tooling preset, whose binaries are
+  not supported. See [ADR 0010](adr/0010-prefer-language-contracts.md).
+
+The pinned MinGW library needs a forwarding definition for its default contract
+handler. CMake adds `cmake/compat/mingw_contract_handler.cpp` only if the normal
+link probe fails and a probe with that definition passes. Contract diagnostics
+still come from GCC's default handler.
+
+## Editor contracts (clangd)
+
+clangd 22.1.8 rejects `pre`, `post`, and `contract_assert`, even after removing
+`-fcontracts`. The root `.clangd` removes GCC's contracts flags and defines
+macros that discard contract clauses during clangd preprocessing. `pre` and
+`post` expand to nothing; `contract_assert` expands to `((void)0)` so it remains
+a statement when followed by a semicolon.
+
+These definitions apply only to clangd. GCC still compiles the original contracts.
+Keep the definitions out of CMake and source headers. clangd cannot diagnose
+contract expressions or find references inside them. The macros also affect
+unrelated functions named `pre` or `post`, including member calls.
+
+The compilation database path remains `out/build/linux-gcc-debug`. Update
+`CompilationDatabase` in `.clangd` when switching presets. Restart the editor's
+clangd instance if it retains old diagnostics. Check a file with:
+
+```bash
+clangd --check=apps/scratchpad/main.cpp --enable-config --log=verbose
+```
+
+The log shows the adjusted compile command. See clangd's
+[CompileFlags documentation](https://clangd.llvm.org/config#compileflags).
+
+`make lint` does not read `.clangd`, so the `Makefile` passes the same three
+definitions to `run-clang-tidy` as `-extra-arg`. Keep the two lists in step: a
+macro added in one place and not the other means the editor and the lint pass
+disagree about what the code says.
 
 ## Static analysis (clang-tidy)
 

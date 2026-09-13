@@ -4,7 +4,7 @@
 //
 // EXPECT_* continues after a failure. Use ASSERT_* before accessing a value
 // that must be valid; these tests compare whole std::expected values instead.
-// EXPECT_DEATH runs each assertion check in a separate process.
+// EXPECT_DEATH runs each contract check in a separate process.
 // Use TEST(), since the MinGW source scan cannot discover TEST_P instances.
 #include <gtest/gtest.h>
 
@@ -86,7 +86,7 @@ TEST(VersionComponent, ReturnsRequestedField) {
 
 // version_component: invalid indices.
 // GoogleTest runs DeathTest suites first to reduce problems with fork and threads.
-// Match "index" in stderr to identify the assertion across toolchains.
+// Match "index" in stderr to identify the precondition across toolchains.
 
 TEST(VersionComponentDeathTest, RejectsIndexAboveRange) {
     constexpr Version v{1, 2, 3};
@@ -95,7 +95,7 @@ TEST(VersionComponentDeathTest, RejectsIndexAboveRange) {
     EXPECT_DEATH(static_cast<void>(version_component(v, 3)), "index");
 }
 
-// A signed index lets the assertion check negatives before they wrap to unsigned.
+// A signed index lets the precondition check negatives before they wrap to unsigned.
 TEST(VersionComponentDeathTest, RejectsNegativeIndex) {
     constexpr Version v{1, 2, 3};
 
