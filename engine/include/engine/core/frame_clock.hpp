@@ -1,5 +1,6 @@
 #pragma once
 
+#include <algorithm>
 #include <chrono>
 #include <cstddef> // IWYU pragma: keep
 
@@ -22,12 +23,18 @@ class FrameClock {
 
     [[nodiscard]]
     auto advance(std::chrono::nanoseconds const elapsed) -> FrameBudget {
+        auto const frame_time =
+            std::clamp(elapsed, std::chrono::nanoseconds{0}, config_.max_elapsed);
         std::size_t steps = 0;
-        accumulator_ += elapsed;
-        while (accumulator_ >= config_.fixed_step) {
+        accumulator_ += frame_time;
+        while (accumulator_ >= config_.fixed_step && steps < config_.max_steps) {
             accumulator_ -= config_.fixed_step;
             steps++;
         }
+
+        // If max_steps capped the frame, discard any full steps still left over.
+        // Keep only the fractional remainder used to calculate alpha.
+        accumulator_ %= config_.fixed_step;
 
         auto const alpha{std::chrono::duration<double>{accumulator_} /
                          std::chrono::duration<double>{config_.fixed_step}};

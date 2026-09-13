@@ -49,5 +49,38 @@ TEST(FrameClockAdvance, AlphaIsTheFractionOfAStepLeftOver) {
     EXPECT_DOUBLE_EQ(alpha, 0.3);
 }
 
-// TODO(human): one elapsed duration long enough to run several whole steps.
-// Name it TEST(FrameClockAdvance, RunsOneStepPerWholeFixedStepOfElapsedTime).
+TEST(FrameClockAdvance, RunsOneStepPerWholeFixedStepOfElapsedTime) {
+    FrameClock frame_clock(kSandboxConfig);
+
+    auto const [steps, alpha] = frame_clock.advance(50ms);
+
+    EXPECT_EQ(steps, 5U);
+    EXPECT_DOUBLE_EQ(alpha, 0.0);
+}
+
+TEST(FrameClockAdvance, StopsAtMaxStepsAndDiscardsTheTimeItSkipped) {
+    FrameClock frame_clock(kSandboxConfig);
+
+    auto const [steps, alpha] = frame_clock.advance(246ms);
+
+    EXPECT_EQ(steps, 5U);
+    EXPECT_DOUBLE_EQ(alpha, 0.6);
+}
+
+TEST(FrameClockAdvance, ClampsElapsedToMaxElapsedBeforeAccumulating) {
+    FrameClock frame_clock(kSandboxConfig);
+
+    auto const [steps, alpha] = frame_clock.advance(309ms);
+
+    EXPECT_EQ(steps, 5U);
+    EXPECT_DOUBLE_EQ(alpha, 0.0);
+}
+
+TEST(FrameClockAdvance, TreatsNegativeElapsedAsNoTimePassing) {
+    FrameClock frame_clock(kSandboxConfig);
+
+    auto const [steps, alpha] = frame_clock.advance(-5ms);
+
+    EXPECT_EQ(steps, 0U);
+    EXPECT_DOUBLE_EQ(alpha, 0.0);
+}
