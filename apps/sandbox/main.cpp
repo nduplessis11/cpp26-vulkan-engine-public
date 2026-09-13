@@ -3,7 +3,6 @@
 #include <engine/core/logger.hpp>
 #include <engine/core/scaffold_info.hpp>
 #include <exception>
-#include <format>
 
 #if ENGINE_HAS_VULKAN_SDK
 #include <vulkan/vulkan_core.h>
@@ -25,15 +24,14 @@ auto run() -> int {
     Logger logger{sink, Severity::Debug};
 
     logger.log(Severity::Info, kSandbox, engine::core::scaffold_name());
-    logger.log(Severity::Info, kSandbox,
-               std::format("scaffold version {}", engine::core::scaffold_version()));
-    logger.log(Severity::Debug, kSandbox, std::format("__cplusplus {}", __cplusplus));
+    logger.log(Severity::Info, kSandbox, "scaffold version {}", engine::core::scaffold_version());
+    logger.log(Severity::Debug, kSandbox, "__cplusplus {}", __cplusplus);
 
 #if ENGINE_HAS_VULKAN_SDK
-    logger.log(Severity::Info, kVulkan,
-               std::format("header {}.{}.{}", VK_API_VERSION_MAJOR(VK_HEADER_VERSION_COMPLETE),
-                           VK_API_VERSION_MINOR(VK_HEADER_VERSION_COMPLETE),
-                           VK_API_VERSION_PATCH(VK_HEADER_VERSION_COMPLETE)));
+    logger.log(Severity::Info, kVulkan, "header {}.{}.{}",
+               VK_API_VERSION_MAJOR(VK_HEADER_VERSION_COMPLETE),
+               VK_API_VERSION_MINOR(VK_HEADER_VERSION_COMPLETE),
+               VK_API_VERSION_PATCH(VK_HEADER_VERSION_COMPLETE));
 #else
     logger.log(Severity::Warn, kVulkan, "1.4 SDK not found; scaffold-only configuration");
 #endif
