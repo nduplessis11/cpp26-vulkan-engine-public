@@ -82,8 +82,15 @@ configure-clang-tidy:
 # Limit it to this repo's sources; the database also contains GoogleTest files.
 LINT_SOURCES := ^$(CURDIR)/(engine|apps|tests)/
 
+# Clang has not implemented P2900 (clang.llvm.org/cxx_status.html lists Contracts
+# as "No"), so it cannot parse pre, post, or contract_assert. Erase them before
+# clang-tidy sees them, the same way .clangd does for the editor. GCC compiles and
+# enforces the real clauses. Cost: any call named pre or post is erased too, so
+# clang-tidy would analyse code GCC never compiles.
+CONTRACT_STUBS := '-extra-arg=-Dpre(...)=' '-extra-arg=-Dpost(...)=' '-extra-arg=-Dcontract_assert(...)=((void)0)'
+
 lint: configure-clang-tidy
-	run-clang-tidy -p out/build/linux-clang-tidy -quiet "$(LINT_SOURCES)"
+	run-clang-tidy -p out/build/linux-clang-tidy -quiet $(CONTRACT_STUBS) "$(LINT_SOURCES)"
 
 ccache-stats:
 	$(COMPOSE) run --rm linux ccache --show-stats

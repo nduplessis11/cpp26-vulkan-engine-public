@@ -4,7 +4,7 @@ add_test(NAME engine.scaffold.smoke COMMAND engine_scaffold_smoke)
 
 # engine_add_gtest() supplies main(), engine build flags, and one CTest entry
 # per TEST(). It also handles MinGW test registration; see cmake/TestHelpers.cmake.
-# EXPECT_DEATH checks assertions in separate processes within the same test binary.
+# EXPECT_DEATH checks contract violations in separate processes within the same test binary.
 # See docs/adr/0009-googletest-for-cpu-tests.md for the GoogleTest decision.
 engine_add_gtest(engine_version_test unit/version_test.cpp)
 engine_add_gtest(engine_fake_handle_test unit/fake_handle_test.cpp)

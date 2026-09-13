@@ -14,3 +14,7 @@ Compile all engine targets in required C++26 or latest mode. Adopt individual C+
 ## Consequences
 
 The codebase honestly targets C++26 without making novelty a dependency. Some facilities may be deferred until supported toolchains agree.
+
+[ADR 0010](0010-prefer-language-contracts.md) adopts language contracts on the
+active GCC Linux and MinGW build targets after a feature probe and build checks.
+Clang tooling erases contract clauses for analysis.

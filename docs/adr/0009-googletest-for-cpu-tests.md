@@ -81,3 +81,8 @@ GPU and golden-image tests are out of scope. Their hard parts — distinguishing
 unsupported environment from a failure, and image comparison — are unaffected by
 this choice, though GoogleTest's subprocess mechanism is a plausible fit for
 capability probes that must not take down the run.
+
+[ADR 0010](0010-prefer-language-contracts.md) replaces the engine's runtime
+`assert` calls with language contracts. The measurements above record the
+original assertion implementation. GoogleTest death tests also verify the
+replacement preconditions.
