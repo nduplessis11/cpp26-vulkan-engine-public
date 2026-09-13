@@ -19,10 +19,19 @@ struct FrameBudget {
 
 class FrameClock {
   public:
-    explicit FrameClock(FrameClockConfig const& config) : config_(config) {}
+    // clang-format 22 has no rule for contract clauses and joins them onto one line,
+    // where a reader cannot scan the conditions. Keep one clause per line by hand.
+    // clang-format off
+    explicit FrameClock(FrameClockConfig const& config)
+        pre(config.fixed_step > std::chrono::nanoseconds{0})
+        pre(config.max_steps > 0)
+        : config_(config) {}
 
     [[nodiscard]]
-    auto advance(std::chrono::nanoseconds const elapsed) -> FrameBudget {
+    auto advance(std::chrono::nanoseconds const elapsed) -> FrameBudget
+        post(accumulator_ >= std::chrono::nanoseconds{0})
+        post(accumulator_ < config_.fixed_step) {
+        // clang-format on
         auto const frame_time =
             std::clamp(elapsed, std::chrono::nanoseconds{0}, config_.max_elapsed);
         std::size_t steps = 0;

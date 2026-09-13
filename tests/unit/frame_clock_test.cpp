@@ -84,3 +84,23 @@ TEST(FrameClockAdvance, TreatsNegativeElapsedAsNoTimePassing) {
     EXPECT_EQ(steps, 0U);
     EXPECT_DOUBLE_EQ(alpha, 0.0);
 }
+
+TEST(FrameClockConstructorDeathTest, RejectsZeroFixedStep) {
+    constexpr FrameClockConfig kSandboxZeroStepConfig{
+        .fixed_step = 0ms,
+        .max_elapsed = 250ms,
+        .max_steps = 5,
+    };
+
+    EXPECT_DEATH(FrameClock frame_clock(kSandboxZeroStepConfig), "fixed_step");
+}
+
+TEST(FrameClockConstructorDeathTest, RejectsZeroMaxSteps) {
+    constexpr FrameClockConfig kSandboxZeroMaxStepConfig{
+        .fixed_step = 10ms,
+        .max_elapsed = 250ms,
+        .max_steps = 0,
+    };
+
+    EXPECT_DEATH(FrameClock frame_clock(kSandboxZeroMaxStepConfig), "max_steps");
+}
