@@ -1,8 +1,12 @@
+#include <chrono>
+#include <cstddef>
 #include <cstdio>
 #include <cstdlib>
+#include <engine/core/frame_clock.hpp>
 #include <engine/core/logger.hpp>
 #include <engine/core/scaffold_info.hpp>
 #include <exception>
+#include <thread>
 
 #if ENGINE_HAS_VULKAN_SDK
 #include <vulkan/vulkan_core.h>
@@ -11,17 +15,28 @@
 namespace {
 
 using engine::core::Category;
+using engine::core::FrameClock;
+using engine::core::FrameClockConfig;
 using engine::core::Logger;
 using engine::core::Severity;
 using engine::core::StderrSink;
 
+using namespace std::chrono_literals;
+
 constexpr Category kSandbox{"sandbox"};
 constexpr Category kVulkan{"vulkan"};
 
+constexpr FrameClockConfig kSandboxConfig{
+    .fixed_step = 10ms,
+    .max_elapsed = 250ms,
+    .max_steps = 5,
+};
+constexpr std::size_t kFrameCount = 600;
+
 auto run() -> int {
-    // Declare the sink first so it outlives the logger.
     StderrSink sink;
     Logger logger{sink, Severity::Debug};
+    FrameClock clock{kSandboxConfig};
 
     logger.log(Severity::Info, kSandbox, engine::core::scaffold_name());
     logger.log(Severity::Info, kSandbox, "scaffold version {}", engine::core::scaffold_version());
@@ -35,6 +50,26 @@ auto run() -> int {
 #else
     logger.log(Severity::Warn, kVulkan, "1.4 SDK not found; scaffold-only configuration");
 #endif
+
+    auto previous{std::chrono::steady_clock::now()};
+    std::size_t frame{0};
+    std::size_t updates{0};
+
+    while (frame < kFrameCount) {
+        auto const now{std::chrono::steady_clock::now()};
+        auto const budget{clock.advance(now - previous)};
+        previous = now;
+
+        for (std::size_t step = 0; step < budget.steps; ++step) {
+            ++updates;
+        }
+
+        // Without a sleep, all 600 frames finish in less than one 10ms step and no
+        // update runs. Sleeping 1ms per frame makes the run take at least 600ms.
+        std::this_thread::sleep_for(1ms);
+        ++frame;
+    }
+    logger.log(Severity::Info, kSandbox, "Updates: {}", updates);
 
     return EXIT_SUCCESS;
 }
