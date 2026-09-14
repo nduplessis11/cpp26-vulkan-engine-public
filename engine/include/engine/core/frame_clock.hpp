@@ -32,10 +32,12 @@ class FrameClock {
         post(accumulator_ >= std::chrono::nanoseconds{0})
         post(accumulator_ < config_.fixed_step) {
         // clang-format on
+
         auto const frame_time =
             std::clamp(elapsed, std::chrono::nanoseconds{0}, config_.max_elapsed);
         std::size_t steps = 0;
         accumulator_ += frame_time;
+
         while (accumulator_ >= config_.fixed_step && steps < config_.max_steps) {
             accumulator_ -= config_.fixed_step;
             steps++;
