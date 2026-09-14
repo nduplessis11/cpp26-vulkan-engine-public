@@ -22,13 +22,13 @@ class FrameClock {
     // clang-format 22 has no rule for contract clauses and joins them onto one line,
     // where a reader cannot scan the conditions. Keep one clause per line by hand.
     // clang-format off
-    explicit FrameClock(FrameClockConfig const& config)
+    constexpr explicit FrameClock(FrameClockConfig const& config)
         pre(config.fixed_step > std::chrono::nanoseconds{0})
         pre(config.max_steps > 0)
         : config_(config) {}
 
     [[nodiscard]]
-    auto advance(std::chrono::nanoseconds const elapsed) -> FrameBudget
+    constexpr auto advance(std::chrono::nanoseconds const elapsed) noexcept -> FrameBudget
         post(accumulator_ >= std::chrono::nanoseconds{0})
         post(accumulator_ < config_.fixed_step) {
         // clang-format on
@@ -49,6 +49,11 @@ class FrameClock {
                          std::chrono::duration<double>{config_.fixed_step}};
 
         return FrameBudget{.steps = steps, .alpha = alpha};
+    }
+
+    [[nodiscard]]
+    constexpr auto remainder() const noexcept -> std::chrono::nanoseconds {
+        return accumulator_;
     }
 
   private:

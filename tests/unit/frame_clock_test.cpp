@@ -1,7 +1,9 @@
 // Every case hands `advance` a duration directly, so no case reads a clock or sleeps.
 // Step counts and remainders are integers and compare exactly; alpha is a double
 // and needs a tolerance.
+#include <array>
 #include <chrono>
+#include <cstddef>
 #include <engine/core/frame_clock.hpp>
 #include <gtest/gtest.h>
 
@@ -92,7 +94,7 @@ TEST(FrameClockConstructorDeathTest, RejectsZeroFixedStep) {
         .max_steps = 5,
     };
 
-    EXPECT_DEATH(FrameClock frame_clock(kSandboxZeroStepConfig), "fixed_step");
+    EXPECT_DEATH(FrameClock{kSandboxZeroStepConfig}, "fixed_step");
 }
 
 TEST(FrameClockConstructorDeathTest, RejectsZeroMaxSteps) {
@@ -102,5 +104,34 @@ TEST(FrameClockConstructorDeathTest, RejectsZeroMaxSteps) {
         .max_steps = 0,
     };
 
-    EXPECT_DEATH(FrameClock frame_clock(kSandboxZeroMaxStepConfig), "max_steps");
+    EXPECT_DEATH(FrameClock{kSandboxZeroMaxStepConfig}, "max_steps");
+}
+
+// The lecture's four-frame table, run on one clock. A clock that drops the remainder
+// between calls returns 0, 0, 3, 0 steps instead of 0, 1, 3, 1.
+TEST(FrameClockAdvance, RunsTheWorkedSequence) {
+    struct Frame {
+        std::chrono::nanoseconds elapsed;
+        std::size_t steps;
+        std::chrono::nanoseconds remainder;
+        double alpha;
+    };
+
+    constexpr std::array<Frame, 4> kFrames{{
+        {.elapsed = 6ms, .steps = 0U, .remainder = 6ms, .alpha = 0.6},
+        {.elapsed = 7ms, .steps = 1U, .remainder = 3ms, .alpha = 0.3},
+        {.elapsed = 32ms, .steps = 3U, .remainder = 5ms, .alpha = 0.5},
+        {.elapsed = 5ms, .steps = 1U, .remainder = 0ms, .alpha = 0.0},
+    }};
+
+    FrameClock frame_clock(kSandboxConfig);
+
+    for (std::size_t i = 0; i < kFrames.size(); ++i) {
+        SCOPED_TRACE(testing::Message() << "frame " << i + 1);
+        auto const [steps, alpha] = frame_clock.advance(kFrames[i].elapsed);
+
+        EXPECT_EQ(steps, kFrames[i].steps);
+        EXPECT_EQ(frame_clock.remainder(), kFrames[i].remainder);
+        EXPECT_DOUBLE_EQ(alpha, kFrames[i].alpha);
+    }
 }
