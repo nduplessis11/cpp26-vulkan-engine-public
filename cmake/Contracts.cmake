@@ -53,6 +53,13 @@ function(engine_enable_contracts target_name)
         "$<IF:$<CONFIG:Debug>,-fcontract-evaluation-semantic=enforce,-fcontract-evaluation-semantic=ignore>"
     )
 
+    # GCC 16 and 17 give std::source_location internal linkage when a contract clause
+    # is parsed before <source_location>. A class that later stores one, such as
+    # LogRecord in logger.hpp, then warns under -Wsubobject-linkage. Including the
+    # header before every file avoids it. Remove this when GCC bug 127251 is fixed.
+    # SHELL: stops CMake's option de-duplication from splitting the two words.
+    target_compile_options(${target_name} INTERFACE "SHELL:-include source_location")
+
     # GCC selects the contracts support library through this link flag.
     target_link_options(${target_name} INTERFACE -fcontracts)
     message(STATUS "GCC contracts enabled: enforce in Debug, ignore in other configurations.")
