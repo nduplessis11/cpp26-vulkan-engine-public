@@ -7,6 +7,10 @@ services:
       dockerfile: docker/Dockerfile
       target: linux
     image: cpp26-vulkan-engine-linux:17-trunk
+    # Run docker-init as PID 1. Without it the command is PID 1, and Linux ignores
+    # SIGINT sent to PID 1 unless the program installs a handler, so Ctrl+C cannot
+    # stop a run that never exits.
+    init: true
     working_dir: /workspace
     user: "${LOCAL_UID:-1000}:${LOCAL_GID:-1000}"
     environment:
@@ -23,6 +27,8 @@ services:
       dockerfile: docker/Dockerfile
       target: windows-mingw
     image: cpp26-vulkan-engine-windows-mingw:latest
+    # Same reason as the linux service.
+    init: true
     working_dir: /workspace
     user: "${LOCAL_UID:-1000}:${LOCAL_GID:-1000}"
     environment:
