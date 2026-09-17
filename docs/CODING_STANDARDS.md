@@ -19,7 +19,8 @@
 - Keep headers self-contained and minimize includes.
 - Use `#pragma once`. `.clang-tidy` subtracts `portability-avoid-pragma-once` for this reason.
 - Do not suppress a warning without documenting why the code is correct.
-- Avoid macros except narrow platform, compiler, logging, assertion, or generated metadata boundaries.
+- Prefer `pre`, `post`, and `contract_assert` over regular `assert` for runtime invariants. Contract predicates must have no side effects. Keep `static_assert` for compile-time checks and GoogleTest assertions for test expectations. See [ADR 0010](adr/0010-prefer-language-contracts.md).
+- Avoid macros except narrow platform, compiler, logging, test, or generated metadata boundaries. Use language contracts directly in engine code.
 - Run `make lint` before asking for a diff review. No test preset enables clang-tidy, so nothing else runs the checks in `.clang-tidy`. See `docs/BUILDING.md`.
 
 ## Vulkan

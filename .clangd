@@ -2,12 +2,19 @@
 # Update this path when switching presets; clangd does not find it automatically.
 CompileFlags:
   CompilationDatabase: out/build/linux-gcc-debug
-  # Ignore GCC's contracts flag in the editor; the build still uses it.
-  # This does not teach Clang to parse contract expressions, which still show errors.
+  # Clang rejects GCC's contracts flags.
   Remove:
-    - -fcontracts
+    - -fcontract*
+    - -fno-contract*
     # CLion can still inject GCC macros with use.predefines enabled. Keep
     # clion.clang.clangd.use.predefines=true and let Clang describe itself:
     # GCC's floating-point feature macros break libstdc++ <format> in clangd.
     - -imacros/clion_clangd_inmemory_directory/macros/*
     - -fgnuc-version=*
+  # Clang cannot parse contract clauses. Erase them only in clangd's view.
+  # Contract expressions receive no diagnostics or references here; GCC checks them.
+  # These function-like macros also affect unrelated calls named pre or post.
+  Add:
+    - "-Dpre(...)="
+    - "-Dpost(...)="
+    - "-Dcontract_assert(...)=((void)0)"

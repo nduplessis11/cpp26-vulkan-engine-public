@@ -4,7 +4,7 @@ function(engine_define_project_options)
     option(ENGINE_BUILD_TESTS "Build the test targets" ON)
     option(ENGINE_WARNINGS_AS_ERRORS "Treat compiler warnings as errors" OFF)
     option(ENGINE_ENABLE_SANITIZERS "Enable supported sanitizers in debug builds" OFF)
-    option(ENGINE_ENABLE_CONTRACTS "Enable GCC's experimental -fcontracts preview (pre/post/contract_assert) in debug builds" ON)
+    option(ENGINE_ENABLE_CONTRACTS "Enable GCC contracts with Debug enforcement (OFF is for configure-only Clang tooling)" ON)
     option(ENGINE_ENABLE_CLANG_TIDY "Run clang-tidy during compilation" OFF)
     option(ENGINE_REQUIRE_VULKAN_SDK "Require Vulkan 1.4 during configure" ON)
 

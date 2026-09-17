@@ -1,5 +1,4 @@
 #pragma once
-#include <cassert>
 #include <cstdint>
 
 namespace engine::core {
@@ -65,8 +64,9 @@ class FakeHandle {
     }
 
     [[nodiscard]]
-    auto get() const noexcept -> std::uint32_t {
-        assert(is_valid());
+    auto get() const noexcept -> std::uint32_t
+        pre(is_valid())
+    {
         return id_;
     }
 

@@ -44,4 +44,8 @@ This is a Vulkan engine, not a generic RHI. The normal path uses Vulkan 1.4, dyn
 
 ## Error policy
 
-Use assertions for internal invariants, expected-style results for recoverable boundary failures, contextual errors at platform, Vulkan, asset, and tool boundaries, no exceptions across real-time or C ABI callbacks, and no swallowed Vulkan results.
+Use language contracts (`pre`, `post`, `contract_assert`) instead of regular
+`assert` for runtime invariants. Use expected-style results for recoverable
+boundary failures and contextual errors at platform, Vulkan, asset, and tool
+boundaries. Do not let exceptions cross real-time or C ABI callbacks. Do not
+discard Vulkan results. See [ADR 0010](adr/0010-prefer-language-contracts.md).
