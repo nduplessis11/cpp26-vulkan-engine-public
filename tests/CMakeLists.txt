@@ -9,7 +9,8 @@ set_tests_properties(engine.sandbox.exits PROPERTIES TIMEOUT 30)
 # per TEST(). It also handles MinGW test registration; see cmake/TestHelpers.cmake.
 # EXPECT_DEATH checks contract violations in separate processes within the same test binary.
 # See docs/adr/0009-googletest-for-cpu-tests.md for the GoogleTest decision.
-engine_add_gtest(engine_version_test unit/version_test.cpp)
-engine_add_gtest(engine_fake_handle_test unit/fake_handle_test.cpp)
-engine_add_gtest(engine_logger_test unit/logger_test.cpp)
-engine_add_gtest(engine_frame_clock_test unit/frame_clock_test.cpp)
+engine_add_gtest(engine_version_test core/version_test.cpp)
+engine_add_gtest(engine_fake_handle_test core/fake_handle_test.cpp)
+engine_add_gtest(engine_logger_test core/logger_test.cpp)
+engine_add_gtest(engine_frame_clock_test core/frame_clock_test.cpp)
+engine_add_gtest(engine_window_test platform/window_test.cpp)
