@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdint>
+#include <expected>
 namespace engine::platform {
 
 struct Extent {
@@ -20,6 +21,10 @@ struct WindowError {};
 struct Window {
     virtual ~Window() = default;
     virtual auto logical_size() const -> Extent = 0;
+    virtual auto pixel_size() const -> Extent = 0;
+    virtual auto scale() const -> std::uint32_t = 0;
+    virtual auto should_close() const -> bool = 0;
+    virtual auto pump() -> std::expected<void, WindowError> = 0;
 };
 
 } // namespace engine::platform
