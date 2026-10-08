@@ -11,8 +11,7 @@ using engine::platform::WindowConfig;
 
 TEST(HeadlessWindow, ReportsConfiguredLogicalSize) {
     constexpr WindowConfig kConfig{
-        .logical_size = Extent{.width = 800, .height = 600},
-        .scale = 1};
+        .logical_size = Extent{.width = 800, .height = 600}, .scale = 1};
 
     auto const window_result{HeadlessWindow::create(kConfig)};
 
@@ -27,8 +26,7 @@ TEST(HeadlessWindow, ReportsConfiguredLogicalSize) {
 
 TEST(HeadlessWindow, RejectsZeroInitialWidth) {
     constexpr WindowConfig kConfig{
-        .logical_size = Extent{.width = 0, .height = 600},
-        .scale = 1};
+        .logical_size = Extent{.width = 0, .height = 600}, .scale = 1};
 
     auto const window_result{HeadlessWindow::create(kConfig)};
     EXPECT_FALSE(window_result.has_value());
@@ -36,16 +34,15 @@ TEST(HeadlessWindow, RejectsZeroInitialWidth) {
 
 TEST(HeadlessWindow, RejectsZeroInitialHeight) {
     constexpr WindowConfig kConfig{
-        .logical_size = Extent{.width = 800, .height = 0},
-        .scale = 1};
+        .logical_size = Extent{.width = 800, .height = 0}, .scale = 1};
 
     auto const window_result{HeadlessWindow::create(kConfig)};
     EXPECT_FALSE(window_result.has_value());
 }
 
 TEST(HeadlessWindow, RejectsZeroInitialScale) {
-    constexpr WindowConfig kConfig{.logical_size = Extent{.width = 800, .height = 600},
-                                   .scale = 0};
+    constexpr WindowConfig kConfig{
+        .logical_size = Extent{.width = 800, .height = 600}, .scale = 0};
 
     auto const window_result{HeadlessWindow::create(kConfig)};
     EXPECT_FALSE(window_result.has_value());
@@ -71,8 +68,7 @@ TEST(HeadlessWindow, RejectsInitialPixelHeightOverflow) {
 
 TEST(HeadlessWindow, ReportsScaledPixelSize) {
     constexpr WindowConfig kConfig{
-        .logical_size = Extent{.width = 800, .height = 600},
-        .scale = 2};
+        .logical_size = Extent{.width = 800, .height = 600}, .scale = 2};
 
     auto const window_result{HeadlessWindow::create(kConfig)};
     ASSERT_TRUE(window_result.has_value());
@@ -85,8 +81,7 @@ TEST(HeadlessWindow, ReportsScaledPixelSize) {
 
 TEST(HeadlessWindow, ReportsConfiguredScale) {
     constexpr WindowConfig kConfig{
-        .logical_size = Extent{.width = 800, .height = 600},
-        .scale = 2};
+        .logical_size = Extent{.width = 800, .height = 600}, .scale = 2};
 
     auto const window_result{HeadlessWindow::create(kConfig)};
     ASSERT_TRUE(window_result.has_value());
@@ -99,8 +94,7 @@ TEST(HeadlessWindow, ReportsConfiguredScale) {
 
 TEST(HeadlessWindow, StartsWithoutCloseRequest) {
     constexpr WindowConfig kConfig{
-        .logical_size = Extent{.width = 800, .height = 600},
-        .scale = 1U};
+        .logical_size = Extent{.width = 800, .height = 600}, .scale = 1U};
 
     auto const window_result{HeadlessWindow::create(kConfig)};
     ASSERT_TRUE(window_result.has_value());
@@ -113,8 +107,7 @@ TEST(HeadlessWindow, StartsWithoutCloseRequest) {
 
 TEST(HeadlessWindow, AppliesCloseRequestOnPump) {
     constexpr WindowConfig kConfig{
-        .logical_size = Extent{.width = 800, .height = 600},
-        .scale = 1U};
+        .logical_size = Extent{.width = 800, .height = 600}, .scale = 1U};
 
     auto const window_result{HeadlessWindow::create(kConfig)};
     ASSERT_TRUE(window_result.has_value());
@@ -132,8 +125,7 @@ TEST(HeadlessWindow, AppliesCloseRequestOnPump) {
 
 TEST(HeadlessWindow, KeepsCloseRequestAfterAnotherPump) {
     constexpr WindowConfig kConfig{
-        .logical_size = Extent{.width = 800, .height = 600},
-        .scale = 1U};
+        .logical_size = Extent{.width = 800, .height = 600}, .scale = 1U};
 
     auto const window_result{HeadlessWindow::create(kConfig)};
     ASSERT_TRUE(window_result.has_value());
@@ -154,8 +146,7 @@ TEST(HeadlessWindow, KeepsCloseRequestAfterAnotherPump) {
 
 TEST(HeadlessWindow, AppliesResizeOnPump) {
     constexpr WindowConfig kConfig{
-        .logical_size = Extent{.width = 800, .height = 600},
-        .scale = 1U};
+        .logical_size = Extent{.width = 800, .height = 600}, .scale = 1U};
 
     auto const window_result{HeadlessWindow::create(kConfig)};
     ASSERT_TRUE(window_result.has_value());
@@ -164,7 +155,8 @@ TEST(HeadlessWindow, AppliesResizeOnPump) {
     HeadlessWindow& headless{**window_result};
     Window& window{headless};
 
-    auto const resize_result = headless.post_resize(Extent{.width = 1024, .height = 768}, 2U);
+    auto const resize_result =
+        headless.post_resize(Extent{.width = 1024, .height = 768}, 2U);
     ASSERT_TRUE(resize_result.has_value());
 
     EXPECT_EQ(window.logical_size(), (Extent{.width = 800, .height = 600}));
@@ -193,16 +185,17 @@ INSTANTIATE_TEST_SUITE_P(
         InvalidResize{"ZeroWidth", Extent{.width = 0, .height = 600}, 1U},
         InvalidResize{"ZeroHeight", Extent{.width = 800, .height = 0}, 1U},
         InvalidResize{"ZeroScale", Extent{.width = 800, .height = 600}, 0U},
-        InvalidResize{"PixelWidthOverflow", Extent{.width = 2'147'483'648U, .height = 1}, 2U},
-        InvalidResize{"PixelHeightOverflow", Extent{.width = 1, .height = 2'147'483'648U}, 2U}),
+        InvalidResize{"PixelWidthOverflow",
+                      Extent{.width = 2'147'483'648U, .height = 1}, 2U},
+        InvalidResize{"PixelHeightOverflow",
+                      Extent{.width = 1, .height = 2'147'483'648U}, 2U}),
     [](testing::TestParamInfo<InvalidResize> const& param_info) -> std::string {
         return std::string{param_info.param.name};
     });
 
 TEST_P(RejectedResize, LeavesWindowUnchanged) {
     constexpr WindowConfig kConfig{
-        .logical_size = Extent{.width = 800, .height = 600},
-        .scale = 1U};
+        .logical_size = Extent{.width = 800, .height = 600}, .scale = 1U};
 
     auto const window_result{HeadlessWindow::create(kConfig)};
     ASSERT_TRUE(window_result.has_value());
@@ -211,7 +204,8 @@ TEST_P(RejectedResize, LeavesWindowUnchanged) {
     HeadlessWindow& headless{**window_result};
     Window& window{headless};
 
-    auto const resize_result = headless.post_resize(GetParam().logical_size, GetParam().scale);
+    auto const resize_result =
+        headless.post_resize(GetParam().logical_size, GetParam().scale);
     EXPECT_FALSE(resize_result.has_value());
 
     auto const pump_result{window.pump()};
@@ -224,8 +218,7 @@ TEST_P(RejectedResize, LeavesWindowUnchanged) {
 
 TEST(HeadlessWindow, KeepsValidResizeAfterRejectedResize) {
     constexpr WindowConfig kConfig{
-        .logical_size = Extent{.width = 800, .height = 600},
-        .scale = 1U};
+        .logical_size = Extent{.width = 800, .height = 600}, .scale = 1U};
 
     auto const window_result{HeadlessWindow::create(kConfig)};
     ASSERT_TRUE(window_result.has_value());
@@ -234,10 +227,12 @@ TEST(HeadlessWindow, KeepsValidResizeAfterRejectedResize) {
     HeadlessWindow& headless{**window_result};
     Window& window{headless};
 
-    auto const resize_result{headless.post_resize(Extent{.width = 1024, .height = 768}, 2U)};
+    auto const resize_result{
+        headless.post_resize(Extent{.width = 1024, .height = 768}, 2U)};
     ASSERT_TRUE(resize_result.has_value());
 
-    auto const bad_resize_result{headless.post_resize(Extent{.width = 0, .height = 480}, 4U)};
+    auto const bad_resize_result{
+        headless.post_resize(Extent{.width = 0, .height = 480}, 4U)};
     ASSERT_FALSE(bad_resize_result.has_value());
 
     auto const pump_result{window.pump()};
@@ -250,8 +245,7 @@ TEST(HeadlessWindow, KeepsValidResizeAfterRejectedResize) {
 
 TEST(HeadlessWindow, AppliesLastOfTwoResizes) {
     constexpr WindowConfig kConfig{
-        .logical_size = Extent{.width = 800, .height = 600},
-        .scale = 1U};
+        .logical_size = Extent{.width = 800, .height = 600}, .scale = 1U};
 
     auto const window_result{HeadlessWindow::create(kConfig)};
     ASSERT_TRUE(window_result.has_value());
@@ -278,8 +272,7 @@ TEST(HeadlessWindow, AppliesLastOfTwoResizes) {
 
 TEST(HeadlessWindow, KeepsResizeAfterAnotherPump) {
     constexpr WindowConfig kConfig{
-        .logical_size = Extent{.width = 800, .height = 600},
-        .scale = 1U};
+        .logical_size = Extent{.width = 800, .height = 600}, .scale = 1U};
 
     auto const window_result{HeadlessWindow::create(kConfig)};
     ASSERT_TRUE(window_result.has_value());
@@ -306,8 +299,7 @@ TEST(HeadlessWindow, KeepsResizeAfterAnotherPump) {
 
 TEST(HeadlessWindow, WindowsKeepSeparateState) {
     constexpr WindowConfig kConfig{
-        .logical_size = Extent{.width = 800, .height = 600},
-        .scale = 1U};
+        .logical_size = Extent{.width = 800, .height = 600}, .scale = 1U};
 
     auto const first_result{HeadlessWindow::create(kConfig)};
     ASSERT_TRUE(first_result.has_value());
@@ -348,8 +340,7 @@ TEST(HeadlessWindow, WindowsKeepSeparateState) {
 
 TEST(HeadlessWindow, AppliesCloseAndResizeInOnePump) {
     constexpr WindowConfig kConfig{
-        .logical_size = Extent{.width = 800, .height = 600},
-        .scale = 1U};
+        .logical_size = Extent{.width = 800, .height = 600}, .scale = 1U};
 
     auto const window_result{HeadlessWindow::create(kConfig)};
     ASSERT_TRUE(window_result.has_value());

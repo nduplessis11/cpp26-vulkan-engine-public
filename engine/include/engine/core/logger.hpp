@@ -47,10 +47,12 @@ struct LogRecord {
 auto inline format_record(LogRecord const& record) -> std::string {
     std::string_view const path{record.location.file_name()};
     auto const slash = path.find_last_of('/');
-    auto const file = slash == std::string_view::npos ? path : path.substr(slash + 1);
+    auto const file =
+        slash == std::string_view::npos ? path : path.substr(slash + 1);
 
     return std::format("[{}] {}: {} ({}:{})", severity_string(record.severity),
-                       record.category.name, record.message, file, record.location.line());
+                       record.category.name, record.message, file,
+                       record.location.line());
 }
 
 struct Sink {
@@ -65,7 +67,8 @@ class StderrSink : public Sink {
         try {
             std::println(stderr, "{}", line);
         } catch (std::system_error const&) { // NOLINT(bugprone-empty-catch)
-            // Ignore write failures; reporting them would use the same broken output.
+            // Ignore write failures; reporting them would use the same broken
+            // output.
         }
     }
 };
@@ -92,17 +95,20 @@ template <class... Args> struct FmtWithLoc {
     // The implicit conversion is the point: it turns a literal at the call site
     // into the wrapper, which is how the location gets captured.
     // NOLINTNEXTLINE(google-explicit-constructor)
-    consteval FmtWithLoc(char const* text,
-                         std::source_location const where = std::source_location::current())
+    consteval FmtWithLoc(char const* text, std::source_location const where =
+                                               std::source_location::current())
         : fmt{text}, loc{where} {}
 };
 
 class Logger {
   public:
-    explicit Logger(Sink& sink, Severity const threshold) : sink_{sink}, threshold_{threshold} {}
+    explicit Logger(Sink& sink, Severity const threshold)
+        : sink_{sink}, threshold_{threshold} {}
 
-    auto log(Severity const severity, Category const category, std::string_view const message,
-             std::source_location const location = std::source_location::current()) const -> void {
+    auto log(Severity const severity, Category const category,
+             std::string_view const message,
+             std::source_location const location =
+                 std::source_location::current()) const -> void {
         if (severity >= threshold_) {
             sink_.write(LogRecord{.severity = severity,
                                   .category = category,
@@ -113,17 +119,22 @@ class Logger {
 
     template <class... Args>
     auto log(Severity const severity, Category const category,
-             FmtWithLoc<std::type_identity_t<Args>...> fmt, Args&&... args) const -> void {
-        vlog(severity, category, fmt.fmt.get(), std::make_format_args(args...), fmt.loc);
+             FmtWithLoc<std::type_identity_t<Args>...> fmt,
+             Args&&... args) const -> void {
+        vlog(severity, category, fmt.fmt.get(), std::make_format_args(args...),
+             fmt.loc);
     }
 
-    auto vlog(Severity const severity, Category const category, std::string_view const format,
-              std::format_args const args,
-              std::source_location const loc = std::source_location::current()) const -> void {
+    auto vlog(Severity const severity, Category const category,
+              std::string_view const format, std::format_args const args,
+              std::source_location const loc =
+                  std::source_location::current()) const -> void {
         if (severity >= threshold_) {
             auto const formatted = std::vformat(format, args);
-            sink_.write(LogRecord{
-                .severity = severity, .category = category, .message = formatted, .location = loc});
+            sink_.write(LogRecord{.severity = severity,
+                                  .category = category,
+                                  .message = formatted,
+                                  .location = loc});
         }
     }
 

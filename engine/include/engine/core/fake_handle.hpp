@@ -15,14 +15,16 @@ inline auto fake_open(FakeDriver& d) noexcept -> std::uint32_t {
     return d.next_id++;
 }
 
-inline auto fake_close(FakeDriver& d, [[maybe_unused]] std::uint32_t id) noexcept -> void {
+inline auto fake_close(FakeDriver& d,
+                       [[maybe_unused]] std::uint32_t id) noexcept -> void {
     ++d.close_count;
 }
 
 class FakeHandle {
   public:
     FakeHandle() = default;
-    explicit FakeHandle(FakeDriver& driver) : driver_{&driver}, id_{fake_open(driver)} {}
+    explicit FakeHandle(FakeDriver& driver)
+        : driver_{&driver}, id_{fake_open(driver)} {}
 
     ~FakeHandle() {
         reset();
@@ -32,7 +34,8 @@ class FakeHandle {
     auto operator=(FakeHandle const&) -> FakeHandle& = delete;
 
     // Empty the source so only the new owner closes the id.
-    FakeHandle(FakeHandle&& other) noexcept : driver_{other.driver_}, id_{other.id_} {
+    FakeHandle(FakeHandle&& other) noexcept
+        : driver_{other.driver_}, id_{other.id_} {
         other.id_ = 0;
         other.driver_ = nullptr;
     }
@@ -64,9 +67,7 @@ class FakeHandle {
     }
 
     [[nodiscard]]
-    auto get() const noexcept -> std::uint32_t
-        pre(is_valid())
-    {
+    auto get() const noexcept -> std::uint32_t pre(is_valid()) {
         return id_;
     }
 

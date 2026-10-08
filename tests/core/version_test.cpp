@@ -6,18 +6,18 @@
 // that must be valid; these tests compare whole std::expected values instead.
 // EXPECT_DEATH runs each contract check in a separate process.
 // Use TEST(), since the MinGW source scan cannot discover TEST_P instances.
-#include <gtest/gtest.h>
+#include "version_printers.hpp"
 
 #include <engine/core/version.hpp>
-
-#include "version_printers.hpp"
+#include <gtest/gtest.h>
 
 using engine::core::parse_version;
 using engine::core::Version;
-using engine::core::VersionParseError;
 using engine::core::version_component;
+using engine::core::VersionParseError;
 
-// Wrap Version{1, 2, 3} in parentheses so its commas stay inside one macro argument.
+// Wrap Version{1, 2, 3} in parentheses so its commas stay inside one macro
+// argument.
 
 // parse_version: valid input.
 
@@ -38,34 +38,44 @@ TEST(ParseVersion, ParsesZeroComponents) {
 
 // A separate error lets callers distinguish missing input from invalid input.
 TEST(ParseVersion, RejectsEmptyInput) {
-    EXPECT_EQ(parse_version(""), std::unexpected{VersionParseError::EmptyInput});
+    EXPECT_EQ(parse_version(""),
+              std::unexpected{VersionParseError::EmptyInput});
 }
 
 // parse_version: invalid input.
 
 // Require exactly three components, including a value after the last dot.
 TEST(ParseVersion, RejectsWrongComponentCount) {
-    EXPECT_EQ(parse_version("1.2"), std::unexpected{VersionParseError::MalformedVersion});
-    EXPECT_EQ(parse_version("1.2."), std::unexpected{VersionParseError::MalformedVersion});
-    EXPECT_EQ(parse_version("1.2.3.4"), std::unexpected{VersionParseError::MalformedVersion});
+    EXPECT_EQ(parse_version("1.2"),
+              std::unexpected{VersionParseError::MalformedVersion});
+    EXPECT_EQ(parse_version("1.2."),
+              std::unexpected{VersionParseError::MalformedVersion});
+    EXPECT_EQ(parse_version("1.2.3.4"),
+              std::unexpected{VersionParseError::MalformedVersion});
 }
 
 // Reject letters both within and in place of a component.
 TEST(ParseVersion, RejectsNonNumericComponents) {
-    EXPECT_EQ(parse_version("1.2.x"), std::unexpected{VersionParseError::MalformedVersion});
-    EXPECT_EQ(parse_version("1x2.3"), std::unexpected{VersionParseError::MalformedVersion});
+    EXPECT_EQ(parse_version("1.2.x"),
+              std::unexpected{VersionParseError::MalformedVersion});
+    EXPECT_EQ(parse_version("1x2.3"),
+              std::unexpected{VersionParseError::MalformedVersion});
 }
 
-// from_chars rejects leading spaces; the final pointer check rejects trailing ones.
+// from_chars rejects leading spaces; the final pointer check rejects trailing
+// ones.
 TEST(ParseVersion, RejectsSurroundingWhitespace) {
-    EXPECT_EQ(parse_version(" 1.2.3"), std::unexpected{VersionParseError::MalformedVersion});
-    EXPECT_EQ(parse_version("1.2.3 "), std::unexpected{VersionParseError::MalformedVersion});
+    EXPECT_EQ(parse_version(" 1.2.3"),
+              std::unexpected{VersionParseError::MalformedVersion});
+    EXPECT_EQ(parse_version("1.2.3 "),
+              std::unexpected{VersionParseError::MalformedVersion});
 }
 
 // Unsigned components make from_chars reject negatives.
 // This catches an accidental change to a signed type.
 TEST(ParseVersion, RejectsNegativeComponent) {
-    EXPECT_EQ(parse_version("1.-2.3"), std::unexpected{VersionParseError::MalformedVersion});
+    EXPECT_EQ(parse_version("1.-2.3"),
+              std::unexpected{VersionParseError::MalformedVersion});
 }
 
 // Overflow must return an error, never wrap to a smaller value.
@@ -85,8 +95,9 @@ TEST(VersionComponent, ReturnsRequestedField) {
 }
 
 // version_component: invalid indices.
-// GoogleTest runs DeathTest suites first to reduce problems with fork and threads.
-// Match "index" in stderr to identify the precondition across toolchains.
+// GoogleTest runs DeathTest suites first to reduce problems with fork and
+// threads. Match "index" in stderr to identify the precondition across
+// toolchains.
 
 TEST(VersionComponentDeathTest, RejectsIndexAboveRange) {
     constexpr Version v{1, 2, 3};
@@ -95,7 +106,8 @@ TEST(VersionComponentDeathTest, RejectsIndexAboveRange) {
     EXPECT_DEATH(static_cast<void>(version_component(v, 3)), "index");
 }
 
-// A signed index lets the precondition check negatives before they wrap to unsigned.
+// A signed index lets the precondition check negatives before they wrap to
+// unsigned.
 TEST(VersionComponentDeathTest, RejectsNegativeIndex) {
     constexpr Version v{1, 2, 3};
 

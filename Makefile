@@ -89,14 +89,22 @@ LINT_SOURCES := ^$(CURDIR)/(engine|apps|tests)/
 # clang-tidy would analyse code GCC never compiles.
 CONTRACT_STUBS := '-extra-arg=-Dpre(...)=' '-extra-arg=-Dpost(...)=' '-extra-arg=-Dcontract_assert(...)=((void)0)'
 
+# clang-tidy has no line-length check, so lint also runs clang-format, which
+# enforces ColumnLimit and the rest of .clang-format. It skips
+# `clang-format off` regions.
+FORMAT_SOURCES = $(shell find engine apps tests -name '*.[ch]pp')
+
 lint: configure-clang-tidy
+	clang-format --dry-run --Werror $(FORMAT_SOURCES)
 	run-clang-tidy -p out/build/linux-clang-tidy -quiet $(CONTRACT_STUBS) "$(LINT_SOURCES)"
 
-# Apply clang-tidy fixes in place. FILE limits the pass to sources matching that
-# regex, e.g. `make lint-fix FILE=tests/platform/window_test.cpp`. Headers are not
-# in the database; their fixes come from the .cpp files that include them.
+# Apply clang-tidy fixes in place, then run clang-format, which wraps long lines.
+# FILE limits both passes to sources matching that regex, e.g.
+# `make lint-fix FILE=tests/platform/window_test.cpp`. Headers are not in the
+# database; their clang-tidy fixes come from the .cpp files that include them.
 lint-fix: configure-clang-tidy
 	run-clang-tidy -p out/build/linux-clang-tidy -quiet -fix $(CONTRACT_STUBS) "$(or $(FILE),$(LINT_SOURCES))"
+	printf '%s\n' $(FORMAT_SOURCES) | grep -E '$(or $(FILE),.)' | xargs -r clang-format -i
 
 ccache-stats:
 	$(COMPOSE) run --rm linux ccache --show-stats

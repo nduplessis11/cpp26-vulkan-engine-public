@@ -123,6 +123,11 @@ This configures the `linux-clang-tidy` preset and then runs `run-clang-tidy` ove
 resulting `compile_commands.json`. A full pass takes about six seconds and needs no
 build.
 
+Before clang-tidy runs, `make lint` runs `clang-format --dry-run --Werror` over
+`engine/`, `apps/`, and `tests/` and stops on any file that differs from
+`.clang-format`, including lines longer than `ColumnLimit` (80). clang-tidy has no
+line-length check.
+
 `make lint` only reports. To apply the suggested fixes in place:
 
 ```bash
@@ -130,8 +135,12 @@ make lint-fix                                     # every lint source
 make lint-fix FILE=tests/platform/window_test.cpp # one file
 ```
 
-`FILE` is a regex matched against paths in `compile_commands.json`. Headers are not
-in that file, so pass a `.cpp` that includes the header; fixes inside the header are
+`lint-fix` runs clang-tidy's fixes and then `clang-format -i`, which wraps long
+lines. It cannot wrap lines inside `// clang-format off` regions; wrap those by hand.
+
+`FILE` is a regex matched against paths in `compile_commands.json` and against
+relative source paths for clang-format. Headers are not in `compile_commands.json`,
+so pass a `.cpp` that includes the header; clang-tidy fixes inside the header are
 applied once even when several files include it.
 
 Four things about this setup are deliberate:

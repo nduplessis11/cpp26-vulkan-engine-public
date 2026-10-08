@@ -25,7 +25,8 @@ class HeadlessWindow : public Window {
     }
 
     auto pixel_size() const -> Extent override {
-        return Extent{.width = logical_size_.width * scale_, .height = logical_size_.height * scale_};
+        return Extent{.width = logical_size_.width * scale_,
+                      .height = logical_size_.height * scale_};
     }
 
     auto scale() const -> std::uint32_t override {
@@ -42,7 +43,8 @@ class HeadlessWindow : public Window {
 
     auto post_resize(Extent logical_size, std::uint32_t scale)
         -> std::expected<void, WindowError> {
-        auto const config{WindowConfig{.logical_size = logical_size, .scale = scale}};
+        auto const config{
+            WindowConfig{.logical_size = logical_size, .scale = scale}};
         if (!is_valid(config)) {
             return std::unexpected{WindowError{}};
         }
@@ -75,9 +77,11 @@ class HeadlessWindow : public Window {
         }
 
         auto const pixel_width{
-            static_cast<std::uint64_t>(config.logical_size.width) * config.scale};
+            static_cast<std::uint64_t>(config.logical_size.width) *
+            config.scale};
         auto const pixel_height{
-            static_cast<std::uint64_t>(config.logical_size.height) * config.scale};
+            static_cast<std::uint64_t>(config.logical_size.height) *
+            config.scale};
 
         if (pixel_width > std::numeric_limits<std::uint32_t>::max() ||
             pixel_height > std::numeric_limits<std::uint32_t>::max()) {

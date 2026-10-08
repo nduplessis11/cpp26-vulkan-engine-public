@@ -39,7 +39,8 @@ auto run() -> int {
     FrameClock clock{kSandboxConfig};
 
     logger.log(Severity::Info, kSandbox, engine::core::scaffold_name());
-    logger.log(Severity::Info, kSandbox, "scaffold version {}", engine::core::scaffold_version());
+    logger.log(Severity::Info, kSandbox, "scaffold version {}",
+               engine::core::scaffold_version());
     logger.log(Severity::Debug, kSandbox, "__cplusplus {}", __cplusplus);
 
 #if ENGINE_HAS_VULKAN_SDK
@@ -48,7 +49,8 @@ auto run() -> int {
                VK_API_VERSION_MINOR(VK_HEADER_VERSION_COMPLETE),
                VK_API_VERSION_PATCH(VK_HEADER_VERSION_COMPLETE));
 #else
-    logger.log(Severity::Warn, kVulkan, "1.4 SDK not found; scaffold-only configuration");
+    logger.log(Severity::Warn, kVulkan,
+               "1.4 SDK not found; scaffold-only configuration");
 #endif
 
     auto previous{std::chrono::steady_clock::now()};
@@ -64,8 +66,9 @@ auto run() -> int {
             ++updates;
         }
 
-        // Without a sleep, all 600 frames finish in less than one 10ms step and no
-        // update runs. Sleeping 1ms per frame makes the run take at least 600ms.
+        // Without a sleep, all 600 frames finish in less than one 10ms step and
+        // no update runs. Sleeping 1ms per frame makes the run take at least
+        // 600ms.
         std::this_thread::sleep_for(1ms);
         ++frame;
     }

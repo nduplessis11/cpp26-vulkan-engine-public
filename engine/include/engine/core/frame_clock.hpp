@@ -19,8 +19,9 @@ struct FrameBudget {
 
 class FrameClock {
   public:
-    // clang-format 22 has no rule for contract clauses and joins them onto one line,
-    // where a reader cannot scan the conditions. Keep one clause per line by hand.
+    // clang-format 22 has no rule for contract clauses and joins them onto one
+    // line, where a reader cannot scan the conditions. Keep one clause per line
+    // by hand.
     // clang-format off
     constexpr explicit FrameClock(FrameClockConfig const& config)
         pre(config.fixed_step > std::chrono::nanoseconds{0})
@@ -28,23 +29,25 @@ class FrameClock {
         : config_(config) {}
 
     [[nodiscard]]
-    constexpr auto advance(std::chrono::nanoseconds const elapsed) noexcept -> FrameBudget
+    constexpr auto advance(std::chrono::nanoseconds const elapsed) noexcept
+        -> FrameBudget
         post(accumulator_ >= std::chrono::nanoseconds{0})
         post(accumulator_ < config_.fixed_step) {
         // clang-format on
 
-        auto const frame_time =
-            std::clamp(elapsed, std::chrono::nanoseconds{0}, config_.max_elapsed);
+        auto const frame_time = std::clamp(elapsed, std::chrono::nanoseconds{0},
+                                           config_.max_elapsed);
         std::size_t steps = 0;
         accumulator_ += frame_time;
 
-        while (accumulator_ >= config_.fixed_step && steps < config_.max_steps) {
+        while (accumulator_ >= config_.fixed_step &&
+               steps < config_.max_steps) {
             accumulator_ -= config_.fixed_step;
             steps++;
         }
 
-        // If max_steps capped the frame, discard any full steps still left over.
-        // Keep only the fractional remainder used to calculate alpha.
+        // If max_steps capped the frame, discard any full steps still left
+        // over. Keep only the fractional remainder used to calculate alpha.
         accumulator_ %= config_.fixed_step;
 
         auto const alpha{std::chrono::duration<double>{accumulator_} /

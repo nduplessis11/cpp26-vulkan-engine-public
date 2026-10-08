@@ -2,7 +2,10 @@ BasedOnStyle: LLVM
 IndentWidth: 4
 TabWidth: 4
 UseTab: Never
-ColumnLimit: 0
+ColumnLimit: 80
+# Every declaration uses a trailing return type, so a break after the return
+# type leaves `auto` alone on a line. LLVM's penalty of 60 allows that break.
+PenaltyReturnTypeOnItsOwnLine: 200
 BreakBeforeBraces: Attach
 AllowShortFunctionsOnASingleLine: Empty
 AllowShortIfStatementsOnASingleLine: Never
