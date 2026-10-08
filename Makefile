@@ -4,7 +4,7 @@
         configure-docker-windows build-docker-windows \
         build-scratchpad run-scratchpad \
         build-sandbox run-sandbox \
-        configure-clang-tidy lint \
+        configure-clang-tidy lint lint-fix \
         ccache-stats clean
 
 # Use 1000:1000 on Windows: Git Bash/MSYS ids cause Docker Desktop write errors.
@@ -91,6 +91,12 @@ CONTRACT_STUBS := '-extra-arg=-Dpre(...)=' '-extra-arg=-Dpost(...)=' '-extra-arg
 
 lint: configure-clang-tidy
 	run-clang-tidy -p out/build/linux-clang-tidy -quiet $(CONTRACT_STUBS) "$(LINT_SOURCES)"
+
+# Apply clang-tidy fixes in place. FILE limits the pass to sources matching that
+# regex, e.g. `make lint-fix FILE=tests/platform/window_test.cpp`. Headers are not
+# in the database; their fixes come from the .cpp files that include them.
+lint-fix: configure-clang-tidy
+	run-clang-tidy -p out/build/linux-clang-tidy -quiet -fix $(CONTRACT_STUBS) "$(or $(FILE),$(LINT_SOURCES))"
 
 ccache-stats:
 	$(COMPOSE) run --rm linux ccache --show-stats
