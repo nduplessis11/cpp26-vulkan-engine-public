@@ -15,3 +15,8 @@ indent_size = 2
 
 [*.md]
 trim_trailing_whitespace = false
+
+# Matches ColumnLimit in .clang-format. Neovim sets textwidth from this. With
+# textwidth 0, Vim's built-in formatting, such as gw, wraps at 79 columns.
+[*.{cpp,hpp}]
+max_line_length = 80

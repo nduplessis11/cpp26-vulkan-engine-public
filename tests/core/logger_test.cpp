@@ -38,8 +38,8 @@ TEST(FormatRecord, RendersSeverityCategoryMessageAndLocation) {
 
     auto const output{engine::core::format_record(record)};
 
-    auto const expected{
-        std::format("[info] sandbox: window created (logger_test.cpp:{})", loc.line())};
+    auto const expected{std::format(
+        "[info] sandbox: window created (logger_test.cpp:{})", loc.line())};
     EXPECT_EQ(output, expected);
 }
 
@@ -53,8 +53,8 @@ TEST(CaptureSink, StoresTheFormattedLine) {
 
     ASSERT_EQ(sink.lines().size(), 1U);
 
-    auto const expected{
-        std::format("[info] sandbox: window created (logger_test.cpp:{})", loc.line())};
+    auto const expected{std::format(
+        "[info] sandbox: window created (logger_test.cpp:{})", loc.line())};
     EXPECT_EQ(sink.lines()[0], expected);
 }
 
@@ -62,11 +62,13 @@ TEST(CaptureSink, CopiesTheMessageOutOfATemporary) {
     CaptureSink sink;
     auto const loc{std::source_location::current()};
 
-    sink.write(LogRecord{Severity::Info, kSandbox, std::format("frame {}", 7), loc});
+    sink.write(
+        LogRecord{Severity::Info, kSandbox, std::format("frame {}", 7), loc});
 
     ASSERT_EQ(sink.lines().size(), 1U);
 
-    auto const expected{std::format("[info] sandbox: frame 7 (logger_test.cpp:{})", loc.line())};
+    auto const expected{std::format(
+        "[info] sandbox: frame 7 (logger_test.cpp:{})", loc.line())};
     EXPECT_EQ(sink.lines()[0], expected);
 }
 
@@ -80,8 +82,8 @@ TEST(Logger, WritesAFormattedRecordToItsSink) {
 
     ASSERT_EQ(sink.lines().size(), 1U);
 
-    auto const expected{
-        std::format("[info] sandbox: window created (logger_test.cpp:{})", loc.line())};
+    auto const expected{std::format(
+        "[info] sandbox: window created (logger_test.cpp:{})", loc.line())};
     EXPECT_EQ(sink.lines()[0], expected);
 }
 
@@ -94,7 +96,8 @@ TEST(Logger, DefaultsLocationToTheCallSite) {
     logger.log(Severity::Info, kSandbox, "window created");
 
     ASSERT_EQ(sink.lines().size(), 1U);
-    EXPECT_TRUE(sink.lines()[0].starts_with("[info] sandbox: window created (logger_test.cpp:"));
+    EXPECT_TRUE(sink.lines()[0].starts_with(
+        "[info] sandbox: window created (logger_test.cpp:"));
 }
 
 TEST(Logger, DropsMessagesBelowItsThreshold) {
@@ -116,7 +119,8 @@ TEST(Logger, PassesMessagesAboveItsThreshold) {
 }
 
 // Each logger must use its own sink and threshold.
-// Shared state would put a message in the wrong buffer or filter it incorrectly.
+// Shared state would put a message in the wrong buffer or filter it
+// incorrectly.
 TEST(Logger, TwoLoggersDoNotObserveEachOther) {
     CaptureSink info_sink;
     Logger info_logger{info_sink, Severity::Info};
@@ -132,8 +136,10 @@ TEST(Logger, TwoLoggersDoNotObserveEachOther) {
     ASSERT_EQ(info_sink.lines().size(), 1U);
     ASSERT_EQ(warn_sink.lines().size(), 1U);
 
-    EXPECT_TRUE(info_sink.lines()[0].starts_with("[info] sandbox: info only (logger_test.cpp:"));
-    EXPECT_TRUE(warn_sink.lines()[0].starts_with("[error] sandbox: warn only (logger_test.cpp:"));
+    EXPECT_TRUE(info_sink.lines()[0].starts_with(
+        "[info] sandbox: info only (logger_test.cpp:"));
+    EXPECT_TRUE(warn_sink.lines()[0].starts_with(
+        "[error] sandbox: warn only (logger_test.cpp:"));
 }
 
 TEST(Logger, VlogFormatsArgumentsIntoItsSink) {
@@ -141,10 +147,12 @@ TEST(Logger, VlogFormatsArgumentsIntoItsSink) {
     Logger logger{sink, Severity::Info};
 
     int frame = 7;
-    logger.vlog(Severity::Info, kSandbox, "frame {}", std::make_format_args(frame));
+    logger.vlog(Severity::Info, kSandbox, "frame {}",
+                std::make_format_args(frame));
 
     ASSERT_EQ(sink.lines().size(), 1U);
-    EXPECT_TRUE(sink.lines()[0].starts_with("[info] sandbox: frame 7 (logger_test.cpp:"));
+    EXPECT_TRUE(sink.lines()[0].starts_with(
+        "[info] sandbox: frame 7 (logger_test.cpp:"));
 }
 
 TEST(Logger, FormatsArgumentsIntoItsSink) {
@@ -154,5 +162,6 @@ TEST(Logger, FormatsArgumentsIntoItsSink) {
     logger.log(Severity::Info, kSandbox, "frame {} of {}", 7, 60);
 
     ASSERT_EQ(sink.lines().size(), 1U);
-    EXPECT_TRUE(sink.lines()[0].starts_with("[info] sandbox: frame 7 of 60 (logger_test.cpp:"));
+    EXPECT_TRUE(sink.lines()[0].starts_with(
+        "[info] sandbox: frame 7 of 60 (logger_test.cpp:"));
 }

@@ -24,7 +24,7 @@ had none, and had no mechanism for acquiring third-party source either.
 
 ## Decision
 
-Adopt GoogleTest for CPU-side tests (`tests/unit/`, `tests/smoke/`), acquired via
+Adopt GoogleTest for CPU-side tests, acquired via
 `FetchContent` and pinned to commit `d89aac5f0dd4021198d903d39de16f896726de21`
 (the v1.18.x branch head — newer than the v1.17.0 tag, and the revision actually
 verified here).
@@ -32,6 +32,10 @@ verified here).
 Registration goes through `engine_add_gtest()` in `cmake/TestHelpers.cmake`,
 which selects `gtest_discover_tests()` natively and `gtest_add_tests()` when
 `CMAKE_CROSSCOMPILING`.
+
+Module tests now live under `tests/<module>/`. The existing core tests moved
+from `tests/unit/` to `tests/core/` on 2026-09-17. See
+[Testing strategy](../TESTING_STRATEGY.md) for the directory layout.
 
 Evidence gathered before deciding, on this project's own toolchain (GCC 17.0.0
 trunk, `-std=c++26`, `__cplusplus=202603`):

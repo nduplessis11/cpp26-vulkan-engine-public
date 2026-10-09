@@ -5,8 +5,12 @@
 #include <engine/core/frame_clock.hpp>
 #include <engine/core/logger.hpp>
 #include <engine/core/scaffold_info.hpp>
+#include <engine/platform/headless_window.hpp>
+#include <engine/platform/window.hpp>
 #include <exception>
+#include <memory>
 #include <thread>
+#include <utility>
 
 #if ENGINE_HAS_VULKAN_SDK
 #include <vulkan/vulkan_core.h>
@@ -20,11 +24,16 @@ using engine::core::FrameClockConfig;
 using engine::core::Logger;
 using engine::core::Severity;
 using engine::core::StderrSink;
+using engine::platform::Extent;
+using engine::platform::HeadlessWindow;
+using engine::platform::Window;
+using engine::platform::WindowConfig;
 
 using namespace std::chrono_literals;
 
 constexpr Category kSandbox{"sandbox"};
 constexpr Category kVulkan{"vulkan"};
+constexpr Category kWindow{"window"};
 
 constexpr FrameClockConfig kSandboxConfig{
     .fixed_step = 10ms,
@@ -39,7 +48,8 @@ auto run() -> int {
     FrameClock clock{kSandboxConfig};
 
     logger.log(Severity::Info, kSandbox, engine::core::scaffold_name());
-    logger.log(Severity::Info, kSandbox, "scaffold version {}", engine::core::scaffold_version());
+    logger.log(Severity::Info, kSandbox, "scaffold version {}",
+               engine::core::scaffold_version());
     logger.log(Severity::Debug, kSandbox, "__cplusplus {}", __cplusplus);
 
 #if ENGINE_HAS_VULKAN_SDK
@@ -48,14 +58,35 @@ auto run() -> int {
                VK_API_VERSION_MINOR(VK_HEADER_VERSION_COMPLETE),
                VK_API_VERSION_PATCH(VK_HEADER_VERSION_COMPLETE));
 #else
-    logger.log(Severity::Warn, kVulkan, "1.4 SDK not found; scaffold-only configuration");
+    logger.log(Severity::Warn, kVulkan,
+               "1.4 SDK not found; scaffold-only configuration");
 #endif
+
+    auto constexpr config{WindowConfig{
+        .logical_size = Extent{.width = 800, .height = 600}, .scale = 1U}};
+    auto window_result = HeadlessWindow::create(config);
+    if (!window_result.has_value()) {
+        logger.log(Severity::Error, kWindow, "Window creation failure");
+        return EXIT_FAILURE;
+    }
+
+    std::unique_ptr<Window> window = std::move(*window_result);
 
     auto previous{std::chrono::steady_clock::now()};
     std::size_t frame{0};
     std::size_t updates{0};
 
     while (frame < kFrameCount) {
+        auto const pump_result{window->pump()};
+        if (!pump_result.has_value()) {
+            logger.log(Severity::Error, kWindow, "Window message pump failure");
+            return EXIT_FAILURE;
+        }
+
+        if (window->should_close()) {
+            break;
+        }
+
         auto const now{std::chrono::steady_clock::now()};
         auto const budget{clock.advance(now - previous)};
         previous = now;
@@ -64,12 +95,14 @@ auto run() -> int {
             ++updates;
         }
 
-        // Without a sleep, all 600 frames finish in less than one 10ms step and no
-        // update runs. Sleeping 1ms per frame makes the run take at least 600ms.
+        // Without a sleep, all 600 frames finish in less than one 10ms step
+        // and no update runs. Sleeping 1ms per frame makes the run take at
+        // least 600ms.
         std::this_thread::sleep_for(1ms);
         ++frame;
     }
-    logger.log(Severity::Info, kSandbox, "Updates: {}", updates);
+    logger.log(Severity::Info, kSandbox, "Updates: {}, Frame: {}", updates,
+               frame);
 
     return EXIT_SUCCESS;
 }

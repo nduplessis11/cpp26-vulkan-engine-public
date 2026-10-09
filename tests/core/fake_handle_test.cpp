@@ -97,7 +97,8 @@ TEST(FakeHandle, SelfMoveAssignmentKeepsTheHandleValid) {
     FakeDriver driver;
     {
         FakeHandle source{driver};
-        FakeHandle& alias = source; // Test self-move without a compiler warning.
+        FakeHandle& alias =
+            source; // Test self-move without a compiler warning.
 
         source = std::move(alias);
 

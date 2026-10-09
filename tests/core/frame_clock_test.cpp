@@ -1,6 +1,6 @@
-// Every case hands `advance` a duration directly, so no case reads a clock or sleeps.
-// Step counts and remainders are integers and compare exactly; alpha is a double
-// and needs a tolerance.
+// Every case hands `advance` a duration directly, so no case reads a clock or
+// sleeps. Step counts and remainders are integers and compare exactly; alpha is
+// a double and needs a tolerance.
 #include <array>
 #include <chrono>
 #include <cstddef>
@@ -122,8 +122,8 @@ TEST(FrameClockConstructorDeathTest, RejectsZeroMaxSteps) {
     EXPECT_DEATH(FrameClock{kSandboxZeroMaxStepConfig}, "max_steps");
 }
 
-// The lecture's four-frame table, run on one clock. A clock that drops the remainder
-// between calls returns 0, 0, 3, 0 steps instead of 0, 1, 3, 1.
+// The lecture's four-frame table, run on one clock. A clock that drops the
+// remainder between calls returns 0, 0, 3, 0 steps instead of 0, 1, 3, 1.
 TEST(FrameClockAdvance, RunsTheWorkedSequence) {
     struct Frame {
         std::chrono::nanoseconds elapsed;
@@ -188,7 +188,8 @@ TEST(FrameClockAdvance, DrivesUpdatesAndRendersAlphaOverTheWorkedSequence) {
 }
 
 TEST(FrameClockAdvance, TwoClocksFedTheSameSequenceReturnTheSameSteps) {
-    constexpr std::array<std::chrono::nanoseconds, 4> kElapsed{6ms, 7ms, 32ms, 5ms};
+    constexpr std::array<std::chrono::nanoseconds, 4> kElapsed{6ms, 7ms, 32ms,
+                                                               5ms};
 
     FrameClock a{kSandboxConfig};
     FrameClock b{kSandboxConfig};
@@ -202,8 +203,8 @@ TEST(FrameClockAdvance, TwoClocksFedTheSameSequenceReturnTheSameSteps) {
     }
 }
 
-// The cap must be above the 25 steps that 250ms holds, so the clamp is what limits
-// this call. With max_steps = 25, removing the clamp still returns 25.
+// The cap must be above the 25 steps that 250ms holds, so the clamp is what
+// limits this call. With max_steps = 25, removing the clamp still returns 25.
 TEST(FrameClockAdvance, ClampLimitsStepsWhenMaxStepsIsHigh) {
     constexpr FrameClockConfig kHighMaxStepsConfig{
         .fixed_step = 10ms,
