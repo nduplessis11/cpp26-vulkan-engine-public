@@ -182,8 +182,6 @@ class RejectedResize : public testing::TestWithParam<InvalidResize> {};
 INSTANTIATE_TEST_SUITE_P(
     HeadlessWindow, RejectedResize,
     testing::Values(
-        InvalidResize{"ZeroWidth", Extent{.width = 0, .height = 600}, 1U},
-        InvalidResize{"ZeroHeight", Extent{.width = 800, .height = 0}, 1U},
         InvalidResize{"ZeroScale", Extent{.width = 800, .height = 600}, 0U},
         InvalidResize{"PixelWidthOverflow",
                       Extent{.width = 2'147'483'648U, .height = 1}, 2U},
@@ -232,7 +230,7 @@ TEST(HeadlessWindow, KeepsValidResizeAfterRejectedResize) {
     ASSERT_TRUE(resize_result.has_value());
 
     auto const bad_resize_result{
-        headless.post_resize(Extent{.width = 0, .height = 480}, 4U)};
+        headless.post_resize(Extent{.width = 640, .height = 480}, 0U)};
     ASSERT_FALSE(bad_resize_result.has_value());
 
     auto const pump_result{window.pump()};
@@ -361,4 +359,56 @@ TEST(HeadlessWindow, AppliesCloseAndResizeInOnePump) {
     EXPECT_EQ(window.logical_size(), (Extent{.width = 1024, .height = 768}));
     EXPECT_EQ(window.pixel_size(), (Extent{.width = 2048, .height = 1536}));
     EXPECT_EQ(window.scale(), 2U);
+}
+
+TEST(HeadlessWindow, HasNoNativeHandle) {
+    constexpr WindowConfig kConfig{
+        .logical_size = Extent{.width = 800, .height = 600}, .scale = 1U};
+
+    auto const window_result{HeadlessWindow::create(kConfig)};
+    ASSERT_TRUE(window_result.has_value());
+    ASSERT_NE(window_result->get(), nullptr);
+
+    Window const& window{**window_result};
+
+    auto const handle = window.native_handle();
+    EXPECT_FALSE(handle.has_value());
+}
+
+TEST(HeadlessWindow, AppliesZeroSizeResizes) {
+    constexpr WindowConfig kConfig{
+        .logical_size = Extent{.width = 800, .height = 600}, .scale = 1U};
+
+    auto const window_result{HeadlessWindow::create(kConfig)};
+    ASSERT_TRUE(window_result.has_value());
+    ASSERT_NE(window_result->get(), nullptr);
+
+    HeadlessWindow& headless{**window_result};
+    Window& window{headless};
+
+    auto const zero_width{
+        headless.post_resize(Extent{.width = 0, .height = 600}, 1U)};
+    ASSERT_TRUE(zero_width.has_value());
+    auto const pump_zero_width{window.pump()};
+    ASSERT_TRUE(pump_zero_width.has_value());
+    EXPECT_EQ(window.logical_size(), (Extent{.width = 0, .height = 600}));
+    EXPECT_EQ(window.pixel_size(), (Extent{.width = 0, .height = 600}));
+
+    auto const zero_height{
+        headless.post_resize(Extent{.width = 800, .height = 0}, 1U)};
+    ASSERT_TRUE(zero_height.has_value());
+    auto const pump_zero_height{window.pump()};
+    ASSERT_TRUE(pump_zero_height.has_value());
+    EXPECT_EQ(window.logical_size(), (Extent{.width = 800, .height = 0}));
+    EXPECT_EQ(window.pixel_size(), (Extent{.width = 800, .height = 0}));
+
+    auto const resize_result{
+        headless.post_resize(Extent{.width = 1024, .height = 768}, 2U)};
+    ASSERT_TRUE(resize_result.has_value());
+    auto const pump_result{window.pump()};
+    ASSERT_TRUE(pump_result.has_value());
+    EXPECT_EQ(window.logical_size(), (Extent{.width = 1024, .height = 768}));
+    EXPECT_EQ(window.pixel_size(), (Extent{.width = 2048, .height = 1536}));
+
+    EXPECT_FALSE(window.native_handle().has_value());
 }

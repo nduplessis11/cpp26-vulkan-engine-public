@@ -13,7 +13,7 @@ class HeadlessWindow : public Window {
   public:
     static auto create(WindowConfig const config)
         -> std::expected<std::unique_ptr<HeadlessWindow>, WindowError> {
-        if (!is_valid(config)) {
+        if (!is_valid_initial(config)) {
             return std::unexpected{WindowError{}};
         }
 
@@ -45,7 +45,7 @@ class HeadlessWindow : public Window {
         -> std::expected<void, WindowError> {
         auto const config{
             WindowConfig{.logical_size = logical_size, .scale = scale}};
-        if (!is_valid(config)) {
+        if (!is_valid_resize(config)) {
             return std::unexpected{WindowError{}};
         }
 
@@ -69,10 +69,23 @@ class HeadlessWindow : public Window {
         return {};
     }
 
+    auto native_handle() const -> std::optional<NativeWindowHandle> override {
+        return std::nullopt;
+    }
+
   private:
-    static auto is_valid(WindowConfig config) -> bool {
-        if (config.logical_size.width == 0 || config.logical_size.height == 0 ||
-            config.scale == 0) {
+    static auto is_valid_initial(WindowConfig config) -> bool {
+        if (config.logical_size.width == 0 || config.logical_size.height == 0) {
+            return false;
+        }
+
+        return is_valid_resize(config);
+    }
+
+    // A resize may set width or height to zero. The operating system reports
+    // that size for a window with no drawable area, such as a minimized one.
+    static auto is_valid_resize(WindowConfig config) -> bool {
+        if (config.scale == 0) {
             return false;
         }
 

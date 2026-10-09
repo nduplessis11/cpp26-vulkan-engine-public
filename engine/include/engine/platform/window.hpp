@@ -1,7 +1,10 @@
 #pragma once
 
 #include <cstdint>
+#include <engine/platform/native_window_handle.hpp>
 #include <expected>
+#include <optional>
+
 namespace engine::platform {
 
 struct Extent {
@@ -25,6 +28,7 @@ struct Window {
     virtual auto scale() const -> std::uint32_t = 0;
     virtual auto should_close() const -> bool = 0;
     virtual auto pump() -> std::expected<void, WindowError> = 0;
+    virtual auto native_handle() const -> std::optional<NativeWindowHandle> = 0;
 };
 
 } // namespace engine::platform
