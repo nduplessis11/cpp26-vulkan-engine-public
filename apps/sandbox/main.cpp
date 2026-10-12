@@ -26,7 +26,7 @@ using engine::core::Severity;
 using engine::core::StderrSink;
 using engine::platform::Extent;
 using engine::platform::HeadlessWindow;
-using engine::platform::Window;
+using engine::platform::IWindow;
 using engine::platform::WindowConfig;
 
 using namespace std::chrono_literals;
@@ -70,7 +70,7 @@ auto run() -> int {
         return EXIT_FAILURE;
     }
 
-    std::unique_ptr<Window> window = std::move(*window_result);
+    std::unique_ptr<IWindow> window = std::move(*window_result);
 
     auto previous{std::chrono::steady_clock::now()};
     std::size_t frame{0};

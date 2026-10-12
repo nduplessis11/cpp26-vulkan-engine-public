@@ -3,11 +3,19 @@
 #include <gtest/gtest.h>
 #include <string>
 #include <string_view>
+#include <type_traits>
 
 using engine::platform::Extent;
 using engine::platform::HeadlessWindow;
-using engine::platform::Window;
+using engine::platform::IWindow;
 using engine::platform::WindowConfig;
+
+// `window_a = window_b` through two IWindow& calls IWindow::operator=, which
+// has no members to copy, so window_a keeps its old size and close state.
+static_assert(!std::is_copy_assignable_v<IWindow> &&
+                  !std::is_move_assignable_v<IWindow>,
+              "Assigning through an IWindow& copies nothing. Keep IWindow's "
+              "assignment operators protected.");
 
 TEST(HeadlessWindow, ReportsConfiguredLogicalSize) {
     constexpr WindowConfig kConfig{
@@ -17,7 +25,7 @@ TEST(HeadlessWindow, ReportsConfiguredLogicalSize) {
 
     ASSERT_TRUE(window_result.has_value());
     ASSERT_NE(window_result->get(), nullptr);
-    Window const& window{**window_result};
+    IWindow const& window{**window_result};
 
     auto const logical_size{window.logical_size()};
 
@@ -74,7 +82,7 @@ TEST(HeadlessWindow, ReportsScaledPixelSize) {
     ASSERT_TRUE(window_result.has_value());
     ASSERT_NE(window_result->get(), nullptr);
 
-    Window const& window{**window_result};
+    IWindow const& window{**window_result};
 
     EXPECT_EQ(window.pixel_size(), (Extent{.width = 1600, .height = 1200}));
 }
@@ -87,7 +95,7 @@ TEST(HeadlessWindow, ReportsConfiguredScale) {
     ASSERT_TRUE(window_result.has_value());
     ASSERT_NE(window_result->get(), nullptr);
 
-    Window const& window{**window_result};
+    IWindow const& window{**window_result};
 
     EXPECT_EQ(window.scale(), 2U);
 }
@@ -100,7 +108,7 @@ TEST(HeadlessWindow, StartsWithoutCloseRequest) {
     ASSERT_TRUE(window_result.has_value());
     ASSERT_NE(window_result->get(), nullptr);
 
-    Window const& window{**window_result};
+    IWindow const& window{**window_result};
 
     EXPECT_FALSE(window.should_close());
 }
@@ -114,7 +122,7 @@ TEST(HeadlessWindow, AppliesCloseRequestOnPump) {
     ASSERT_NE(window_result->get(), nullptr);
 
     HeadlessWindow& headless{**window_result};
-    Window& window{**window_result};
+    IWindow& window{**window_result};
     headless.post_close();
     EXPECT_FALSE(window.should_close());
 
@@ -132,7 +140,7 @@ TEST(HeadlessWindow, KeepsCloseRequestAfterAnotherPump) {
     ASSERT_NE(window_result->get(), nullptr);
 
     HeadlessWindow& headless{**window_result};
-    Window& window{headless};
+    IWindow& window{headless};
     headless.post_close();
 
     auto const first_pump_result{window.pump()};
@@ -153,7 +161,7 @@ TEST(HeadlessWindow, AppliesResizeOnPump) {
     ASSERT_NE(window_result->get(), nullptr);
 
     HeadlessWindow& headless{**window_result};
-    Window& window{headless};
+    IWindow& window{headless};
 
     auto const resize_result =
         headless.post_resize(Extent{.width = 1024, .height = 768}, 2U);
@@ -200,7 +208,7 @@ TEST_P(RejectedResize, LeavesWindowUnchanged) {
     ASSERT_NE(window_result->get(), nullptr);
 
     HeadlessWindow& headless{**window_result};
-    Window& window{headless};
+    IWindow& window{headless};
 
     auto const resize_result =
         headless.post_resize(GetParam().logical_size, GetParam().scale);
@@ -223,7 +231,7 @@ TEST(HeadlessWindow, KeepsValidResizeAfterRejectedResize) {
     ASSERT_NE(window_result->get(), nullptr);
 
     HeadlessWindow& headless{**window_result};
-    Window& window{headless};
+    IWindow& window{headless};
 
     auto const resize_result{
         headless.post_resize(Extent{.width = 1024, .height = 768}, 2U)};
@@ -250,7 +258,7 @@ TEST(HeadlessWindow, AppliesLastOfTwoResizes) {
     ASSERT_NE(window_result->get(), nullptr);
 
     HeadlessWindow& headless{**window_result};
-    Window& window{headless};
+    IWindow& window{headless};
 
     auto const first_resize_result{
         headless.post_resize(Extent{.width = 1024, .height = 768}, 2U)};
@@ -277,7 +285,7 @@ TEST(HeadlessWindow, KeepsResizeAfterAnotherPump) {
     ASSERT_NE(window_result->get(), nullptr);
 
     HeadlessWindow& headless{**window_result};
-    Window& window{headless};
+    IWindow& window{headless};
 
     auto const resize_result{
         headless.post_resize(Extent{.width = 1024, .height = 768}, 2U)};
@@ -309,8 +317,8 @@ TEST(HeadlessWindow, WindowsKeepSeparateState) {
 
     HeadlessWindow& first_headless{**first_result};
     HeadlessWindow& second_headless{**second_result};
-    Window& first{first_headless};
-    Window& second{second_headless};
+    IWindow& first{first_headless};
+    IWindow& second{second_headless};
 
     auto const resize_result{
         first_headless.post_resize(Extent{.width = 1024, .height = 768}, 2U)};
@@ -345,7 +353,7 @@ TEST(HeadlessWindow, AppliesCloseAndResizeInOnePump) {
     ASSERT_NE(window_result->get(), nullptr);
 
     HeadlessWindow& headless{**window_result};
-    Window& window{headless};
+    IWindow& window{headless};
 
     headless.post_close();
     auto const resize_result{
@@ -369,7 +377,7 @@ TEST(HeadlessWindow, HasNoNativeHandle) {
     ASSERT_TRUE(window_result.has_value());
     ASSERT_NE(window_result->get(), nullptr);
 
-    Window const& window{**window_result};
+    IWindow const& window{**window_result};
 
     auto const handle = window.native_handle();
     EXPECT_FALSE(handle.has_value());
@@ -384,7 +392,7 @@ TEST(HeadlessWindow, AppliesZeroSizeResizes) {
     ASSERT_NE(window_result->get(), nullptr);
 
     HeadlessWindow& headless{**window_result};
-    Window& window{headless};
+    IWindow& window{headless};
 
     auto const zero_width{
         headless.post_resize(Extent{.width = 0, .height = 600}, 1U)};

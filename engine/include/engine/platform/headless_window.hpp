@@ -9,7 +9,7 @@
 
 namespace engine::platform {
 
-class HeadlessWindow : public Window {
+class HeadlessWindow : public IWindow {
   public:
     static auto create(WindowConfig const config)
         -> std::expected<std::unique_ptr<HeadlessWindow>, WindowError> {

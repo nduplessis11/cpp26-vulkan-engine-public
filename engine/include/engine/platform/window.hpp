@@ -21,14 +21,21 @@ struct WindowConfig {
 
 struct WindowError {};
 
-struct Window {
-    virtual ~Window() = default;
+struct IWindow {
+    virtual ~IWindow() = default;
     virtual auto logical_size() const -> Extent = 0;
     virtual auto pixel_size() const -> Extent = 0;
     virtual auto scale() const -> std::uint32_t = 0;
     virtual auto should_close() const -> bool = 0;
     virtual auto pump() -> std::expected<void, WindowError> = 0;
     virtual auto native_handle() const -> std::optional<NativeWindowHandle> = 0;
+
+  protected:
+    IWindow() = default;
+    IWindow(IWindow const&) = default;
+    IWindow(IWindow&&) = default;
+    auto operator=(IWindow const&) -> IWindow& = default;
+    auto operator=(IWindow&&) -> IWindow& = default;
 };
 
 } // namespace engine::platform
