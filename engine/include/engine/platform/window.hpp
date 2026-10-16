@@ -4,6 +4,7 @@
 #include <engine/platform/native_window_handle.hpp>
 #include <expected>
 #include <optional>
+#include <string_view>
 
 namespace engine::platform {
 
@@ -19,7 +20,38 @@ struct WindowConfig {
     std::uint32_t scale;
 };
 
-struct WindowError {};
+// REFACTOR?: This leaks implementation details.
+enum class WindowError : std::uint8_t {
+    InvalidConfig,
+    NoDisplay,
+    ConnectionFailed,
+    MissingCompositor,
+    MissingXdgWmBase,
+    ProxyCreationFailed,
+};
+
+constexpr auto describe(WindowError error) -> std::string_view {
+    switch (error) {
+    case WindowError::InvalidConfig:
+        return "Invalid window config";
+        break;
+    case WindowError::NoDisplay:
+        return "No display";
+        break;
+    case WindowError::ConnectionFailed:
+        return "Connection failed";
+        break;
+    case WindowError::MissingCompositor:
+        return "wl_compositor is missing";
+        break;
+    case WindowError::MissingXdgWmBase:
+        return "xdg_wm_base is missing";
+        break;
+    case WindowError::ProxyCreationFailed:
+        return "Proxy creation failed";
+        break;
+    }
+}
 
 struct IWindow {
     virtual ~IWindow() = default;

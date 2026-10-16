@@ -14,3 +14,13 @@ engine_add_gtest(engine_fake_handle_test core/fake_handle_test.cpp)
 engine_add_gtest(engine_logger_test core/logger_test.cpp)
 engine_add_gtest(engine_frame_clock_test core/frame_clock_test.cpp)
 engine_add_gtest(engine_window_test platform/window_test.cpp)
+
+if(ENGINE_BUILD_WAYLAND)
+    engine_add_gtest(engine_wayland_test platform/wayland_test.cpp)
+    # Backend headers are private to the engine, so only tests reach engine/src.
+    target_include_directories(
+        engine_wayland_test
+        PRIVATE "${PROJECT_SOURCE_DIR}/engine/src"
+    )
+    target_link_libraries(engine_wayland_test PRIVATE engine_platform_wayland)
+endif()

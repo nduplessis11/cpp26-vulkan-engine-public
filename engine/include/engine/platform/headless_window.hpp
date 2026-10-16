@@ -15,7 +15,7 @@ class HeadlessWindow : public IWindow {
     static auto create(WindowConfig const config)
         -> std::expected<std::unique_ptr<HeadlessWindow>, WindowError> {
         if (!is_valid_initial(config)) {
-            return std::unexpected{WindowError{}};
+            return std::unexpected{WindowError::InvalidConfig};
         }
 
         return std::unique_ptr<HeadlessWindow>{new HeadlessWindow{config}};
@@ -47,7 +47,7 @@ class HeadlessWindow : public IWindow {
         auto const config{
             WindowConfig{.logical_size = logical_size, .scale = scale}};
         if (!is_valid_resize(config)) {
-            return std::unexpected{WindowError{}};
+            return std::unexpected{WindowError::InvalidConfig};
         }
 
         pending_resize_ = config;
