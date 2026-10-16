@@ -55,8 +55,17 @@ SCRATCHPAD_BIN := ./out/build/docker-linux-gcc-debug/apps/scratchpad/engine_scra
 build-scratchpad: configure-docker-linux
 	$(COMPOSE) run --rm linux cmake --build --preset docker-linux-gcc-debug --target engine_scratchpad
 
+# Share your desktop's Wayland socket with the container so programs in it can
+# open windows. Only do this if the socket exists. If it doesn't, Docker makes
+# an empty folder owned by root at that path on your machine instead.
+WAYLAND_SOCKET := $(XDG_RUNTIME_DIR)/$(WAYLAND_DISPLAY)
+ifneq ($(and $(XDG_RUNTIME_DIR),$(WAYLAND_DISPLAY),$(wildcard $(WAYLAND_SOCKET))),)
+	WAYLAND_RUN_FLAGS := -v $(WAYLAND_SOCKET):/tmp/$(WAYLAND_DISPLAY) \
+			     -e XDG_RUNTIME_DIR=/tmp -e WAYLAND_DISPLAY=$(WAYLAND_DISPLAY)
+endif
+
 run-scratchpad: build-scratchpad
-	$(COMPOSE) run --rm linux $(SCRATCHPAD_BIN) $(ARGS)
+	$(COMPOSE) run --rm $(WAYLAND_RUN_FLAGS) linux $(SCRATCHPAD_BIN) $(ARGS)
 
 # Run in the container to use the same GCC 17 libstdc++ as the build.
 SANDBOX_BIN := ./out/build/docker-linux-gcc-debug/apps/sandbox/engine_sandbox
