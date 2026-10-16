@@ -16,3 +16,11 @@ target_link_libraries(
 if(Vulkan_FOUND)
     target_link_libraries(engine_runtime INTERFACE Vulkan::Vulkan)
 endif()
+
+if(ENGINE_BUILD_WAYLAND)
+    find_package(PkgConfig REQUIRED)
+    pkg_check_modules(WaylandClient REQUIRED IMPORTED_TARGET wayland-client)
+
+    include(WaylandProtocols)
+    engine_add_xdg_shell_protocol(engine_xdg_shell_protocol)
+endif()

@@ -75,8 +75,11 @@ build-docker-windows: configure-docker-windows
 
 # Use host tools for clang-tidy; the image has no Clang and uses newer GCC headers.
 # This preset creates compile_commands.json without the unsupported -fcontracts flag.
+# The Wayland backend includes a header that wayland-scanner writes during the
+# build. Build only that generation target so clang-tidy can read the header.
 configure-clang-tidy:
 	cmake --preset linux-clang-tidy
+	cmake --build out/build/linux-clang-tidy --target engine_xdg_shell_protocol_generate
 
 # run-clang-tidy checks every matching file, even when no rebuild is needed.
 # Limit it to this repo's sources; the database also contains GoogleTest files.
