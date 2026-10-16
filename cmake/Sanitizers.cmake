@@ -5,6 +5,12 @@ function(engine_enable_sanitizers target_name)
         return()
     endif()
 
-    target_compile_options(${target_name} INTERFACE -fsanitize=address,undefined -fno-omit-frame-pointer)
-    target_link_options(${target_name} INTERFACE -fsanitize=address,undefined -fno-omit-frame-pointer)
+    target_compile_options(
+        ${target_name}
+        INTERFACE -fsanitize=address,undefined -fno-omit-frame-pointer
+    )
+    target_link_options(
+        ${target_name}
+        INTERFACE -fsanitize=address,undefined -fno-omit-frame-pointer
+    )
 endfunction()

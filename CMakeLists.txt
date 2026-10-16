@@ -43,17 +43,27 @@ find_package(Vulkan 1.4 QUIET)
 
 if(Vulkan_FOUND)
     message(STATUS "Found Vulkan ${Vulkan_VERSION}")
-    target_compile_definitions(engine_project_options INTERFACE ENGINE_HAS_VULKAN_SDK=1)
+    target_compile_definitions(
+        engine_project_options
+        INTERFACE ENGINE_HAS_VULKAN_SDK=1
+    )
 else()
     if(ENGINE_REQUIRE_VULKAN_SDK)
-        message(FATAL_ERROR
+        message(
+            FATAL_ERROR
             "A Vulkan 1.4 SDK/loader/header set was not found. "
             "Install a Vulkan 1.4 SDK or configure only for scaffold inspection with "
             "-DENGINE_REQUIRE_VULKAN_SDK=OFF."
         )
     endif()
-    message(WARNING "Building scaffold without Vulkan. Lesson 000 is not complete until Vulkan 1.4 is found.")
-    target_compile_definitions(engine_project_options INTERFACE ENGINE_HAS_VULKAN_SDK=0)
+    message(
+        WARNING
+        "Building scaffold without Vulkan. Lesson 000 is not complete until Vulkan 1.4 is found."
+    )
+    target_compile_definitions(
+        engine_project_options
+        INTERFACE ENGINE_HAS_VULKAN_SDK=0
+    )
 endif()
 
 add_subdirectory(engine)

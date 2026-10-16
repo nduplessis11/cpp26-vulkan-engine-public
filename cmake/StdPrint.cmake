@@ -1,7 +1,10 @@
 include_guard(GLOBAL)
 
 function(engine_enable_std_print target_name)
-    if(NOT CMAKE_SYSTEM_NAME STREQUAL "Windows" OR NOT CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+    if(
+        NOT CMAKE_SYSTEM_NAME STREQUAL "Windows"
+        OR NOT CMAKE_CXX_COMPILER_ID STREQUAL "GNU"
+    )
         return()
     endif()
 

@@ -8,7 +8,10 @@ target_include_directories(
         "$<INSTALL_INTERFACE:include>"
 )
 
-target_link_libraries(engine_runtime INTERFACE engine::project_options engine::project_warnings)
+target_link_libraries(
+    engine_runtime
+    INTERFACE engine::project_options engine::project_warnings
+)
 
 if(Vulkan_FOUND)
     target_link_libraries(engine_runtime INTERFACE Vulkan::Vulkan)

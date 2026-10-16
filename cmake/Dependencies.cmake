@@ -17,7 +17,8 @@ function(engine_fetch_test_dependencies)
     FetchContent_Declare(
         googletest
         GIT_REPOSITORY https://github.com/google/googletest.git
-        GIT_TAG d89aac5f0dd4021198d903d39de16f896726de21 # Tested v1.18.x commit.
+        GIT_TAG
+            d89aac5f0dd4021198d903d39de16f896726de21 # Tested v1.18.x commit.
     )
     # Skip clang-tidy for GoogleTest's sources. HeaderFilterRegex only filters
     # headers; it cannot exclude the main source file being analyzed.
