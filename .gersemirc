@@ -1,0 +1,5 @@
+line_length: 80
+indent: 4
+unsafe: false
+definitions:
+  - cmake

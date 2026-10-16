@@ -4,7 +4,7 @@
         configure-docker-windows build-docker-windows \
         build-scratchpad run-scratchpad \
         build-sandbox run-sandbox \
-        configure-clang-tidy lint lint-fix \
+        configure-clang-tidy lint lint-fix format-cmake check-cmake-format \
         ccache-stats clean
 
 # Use 1000:1000 on Windows: Git Bash/MSYS ids cause Docker Desktop write errors.
@@ -94,17 +94,39 @@ CONTRACT_STUBS := '-extra-arg=-Dpre(...)=' '-extra-arg=-Dpost(...)=' '-extra-arg
 # `clang-format off` regions.
 FORMAT_SOURCES = $(shell find engine apps tests -name '*.[ch]pp')
 
-lint: configure-clang-tidy
+# Limit formatting to source directories so generated and fetched CMake files
+# under out/ and cmake-build-*/ are excluded.
+CMAKE_FORMAT_SOURCES = CMakeLists.txt $(shell find cmake engine apps tests -name CMakeLists.txt -o -name '*.cmake')
+
+format-cmake:
+	printf '%s\n' $(CMAKE_FORMAT_SOURCES) | grep -E '$(or $(FILE),.)' | xargs -r gersemi --no-cache --in-place
+
+check-cmake-format:
+	gersemi --no-cache --check $(CMAKE_FORMAT_SOURCES)
+
+lint: check-cmake-format configure-clang-tidy
 	clang-format --dry-run --Werror $(FORMAT_SOURCES)
 	run-clang-tidy -p out/build/linux-clang-tidy -quiet $(CONTRACT_STUBS) "$(LINT_SOURCES)"
 
 # Apply clang-tidy fixes in place, then run clang-format, which wraps long lines.
-# FILE limits both passes to sources matching that regex, e.g.
+# FILE limits each pass to sources matching that regex, e.g.
 # `make lint-fix FILE=tests/platform/window_test.cpp`. Headers are not in the
 # database; their clang-tidy fixes come from the .cpp files that include them.
+# Also format CMake files. Run every pass and return the first failure.
 lint-fix: configure-clang-tidy
-	run-clang-tidy -p out/build/linux-clang-tidy -quiet -fix $(CONTRACT_STUBS) "$(or $(FILE),$(LINT_SOURCES))"
-	printf '%s\n' $(FORMAT_SOURCES) | grep -E '$(or $(FILE),.)' | xargs -r clang-format -i
+	@tidy_status=0; \
+	run-clang-tidy -p out/build/linux-clang-tidy -quiet -fix $(CONTRACT_STUBS) "$(or $(FILE),$(LINT_SOURCES))" || tidy_status=$$?; \
+	format_status=0; \
+	printf '%s\n' $(FORMAT_SOURCES) | grep -E '$(or $(FILE),.)' | xargs -r clang-format -i || format_status=$$?; \
+	cmake_format_status=0; \
+	$(MAKE) --no-print-directory format-cmake || cmake_format_status=$$?; \
+	if [ $$tidy_status -ne 0 ]; then \
+	    exit $$tidy_status; \
+	fi; \
+	if [ $$format_status -ne 0 ]; then \
+	    exit $$format_status; \
+	fi; \
+	exit $$cmake_format_status
 
 ccache-stats:
 	$(COMPOSE) run --rm linux ccache --show-stats

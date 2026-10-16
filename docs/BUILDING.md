@@ -113,6 +113,32 @@ definitions to `run-clang-tidy` as `-extra-arg`. Keep the two lists in step: a
 macro added in one place and not the other means the editor and the lint pass
 disagree about what the code says.
 
+## CMake formatting
+
+Install [Gersemi](https://github.com/BlankSpruce/gersemi) on the host:
+
+```bash
+pipx install 'gersemi==0.28.1'
+```
+
+The repository's `.gersemirc` sets four-space indentation and an 80-column
+limit. It also enables Gersemi's checks that formatting preserves the parsed
+code. Format or check CMake files without configuring or building the engine:
+
+```bash
+make format-cmake
+make format-cmake FILE=cmake/WaylandProtocols.cmake
+make check-cmake-format
+```
+
+These commands cover the root `CMakeLists.txt` and CMake files under `cmake/`,
+`engine/`, `apps/`, and `tests/`. They exclude generated build files.
+`make lint` checks CMake formatting, and `make lint-fix` applies it.
+
+For formatting on save, configure the editor to run Gersemi with the repository's
+`.gersemirc`. Editors that send the buffer through standard input can use
+`gersemi --no-cache --config /path/to/repo/.gersemirc -`.
+
 ## Static analysis (clang-tidy)
 
 ```bash
@@ -135,13 +161,15 @@ make lint-fix                                     # every lint source
 make lint-fix FILE=tests/platform/window_test.cpp # one file
 ```
 
-`lint-fix` runs clang-tidy's fixes and then `clang-format -i`, which wraps long
-lines. It cannot wrap lines inside `// clang-format off` regions; wrap those by hand.
+`lint-fix` runs clang-tidy's fixes, `clang-format -i`, and Gersemi. Formatting
+still runs when clang-tidy fails. The target returns the first failing pass's
+exit status.
+It cannot wrap lines inside `// clang-format off` regions; wrap those by hand.
 
 `FILE` is a regex matched against paths in `compile_commands.json` and against
-relative source paths for clang-format. Headers are not in `compile_commands.json`,
-so pass a `.cpp` that includes the header; clang-tidy fixes inside the header are
-applied once even when several files include it.
+relative source paths for clang-format and Gersemi. Headers are not in
+`compile_commands.json`, so pass a `.cpp` that includes the header; clang-tidy
+fixes inside the header are applied once even when several files include it.
 
 Four things about this setup are deliberate:
 
