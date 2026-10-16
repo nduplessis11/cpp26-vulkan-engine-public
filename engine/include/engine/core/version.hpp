@@ -1,9 +1,11 @@
 #pragma once
 #include <array>
 #include <charconv>
+#include <cstddef>
 #include <cstdint>
 #include <expected>
 #include <string_view>
+#include <system_error>
 #include <utility>
 
 namespace engine::core {

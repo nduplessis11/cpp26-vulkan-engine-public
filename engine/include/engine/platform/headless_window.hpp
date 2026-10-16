@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdint>
+#include <engine/platform/native_window_handle.hpp>
 #include <engine/platform/window.hpp>
 #include <expected>
 #include <limits>

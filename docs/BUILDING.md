@@ -189,9 +189,9 @@ Four things about this setup are deliberate:
   cannot filter them out: `HeaderFilterRegex` filters *headers*, while a translation
   unit's own source file is always analyzed.
 
-`WarningsAsErrors` is empty in `.clang-tidy`, so findings never fail anything. No
-build or test preset enables clang-tidy, so this is an on-demand pass rather than a
-cost every build pays.
+`.clang-tidy` treats `misc-include-cleaner` warnings as errors, so missing includes
+fail lint. No build or test preset enables clang-tidy, so this is an on-demand
+pass rather than a cost every build pays.
 
 ## Docker (containerized builds)
 

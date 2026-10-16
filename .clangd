@@ -18,3 +18,10 @@ CompileFlags:
     - "-Dpre(...)="
     - "-Dpost(...)="
     - "-Dcontract_assert(...)=((void)0)"
+Diagnostics:
+  MissingIncludes: Strict
+  # Same headers and reasons as misc-include-cleaner.IgnoreHeaders in .clang-tidy.
+  Includes:
+    IgnoreHeader:
+      - bits/.*
+      - wayland-client(-core|-protocol)?\.h

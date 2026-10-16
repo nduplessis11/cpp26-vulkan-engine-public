@@ -104,9 +104,20 @@ format-cmake:
 check-cmake-format:
 	gersemi --no-cache --check $(CMAKE_FORMAT_SOURCES)
 
+# misc-include-cleaner reports only on the file clang-tidy was given, never on
+# the headers that file includes, and the database lists only .cpp files. Give
+# clang-tidy each header as its own file so a header that relies on another
+# header's includes fails lint too. clang-tidy compiles a header with the flags
+# of a database entry with a similar path. Run one clang-tidy per header: given
+# several files, clang-tidy 22 reports "Error while processing" for every file
+# after the first one that fails. xargs still checks every header and exits
+# nonzero if any of them fails.
+LINT_HEADERS = $(shell find engine apps tests -name '*.hpp')
+
 lint: check-cmake-format configure-clang-tidy
 	clang-format --dry-run --Werror $(FORMAT_SOURCES)
 	run-clang-tidy -p out/build/linux-clang-tidy -quiet $(CONTRACT_STUBS) "$(LINT_SOURCES)"
+	printf '%s\n' $(LINT_HEADERS) | xargs -r -n1 clang-tidy -p out/build/linux-clang-tidy --quiet -checks='-*,misc-include-cleaner' $(CONTRACT_STUBS)
 
 # Apply clang-tidy fixes in place, then run clang-format, which wraps long lines.
 # FILE limits each pass to sources matching that regex, e.g.

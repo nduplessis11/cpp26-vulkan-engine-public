@@ -9,6 +9,7 @@
 #include "version_printers.hpp"
 
 #include <engine/core/version.hpp>
+#include <expected>
 #include <gtest/gtest.h>
 
 using engine::core::parse_version;

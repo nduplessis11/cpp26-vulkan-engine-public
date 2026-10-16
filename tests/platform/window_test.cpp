@@ -1,3 +1,4 @@
+#include <cstdint>
 #include <engine/platform/headless_window.hpp>
 #include <engine/platform/window.hpp>
 #include <gtest/gtest.h>
