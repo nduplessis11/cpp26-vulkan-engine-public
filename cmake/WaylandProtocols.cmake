@@ -23,10 +23,17 @@ function(engine_add_xdg_shell_protocol target_name)
 
     # The build tool reruns the scanner only when an output is missing or
     # older than the XML or the scanner executable.
+    #
+    # The outputs are made read-only so that an editor warns before you
+    # change them. The next scanner run would overwrite the change. The old
+    # outputs are removed first because the scanner cannot open a read-only
+    # file for writing.
     add_custom_command(
         OUTPUT "${header}" "${code}"
+        COMMAND "${CMAKE_COMMAND}" -E rm -f "${header}" "${code}"
         COMMAND "${wayland_scanner}" client-header "${xml}" "${header}"
         COMMAND "${wayland_scanner}" private-code "${xml}" "${code}"
+        COMMAND chmod a-w "${header}" "${code}"
         DEPENDS "${xml}" "${wayland_scanner}"
         COMMENT "Generating xdg-shell client protocol code"
         VERBATIM
@@ -46,5 +53,10 @@ function(engine_add_xdg_shell_protocol target_name)
         ${target_name}
         PUBLIC FILE_SET HEADERS BASE_DIRS "${out_dir}" FILES "${header}"
     )
+    # The header is scanner output, like the system's
+    # wayland-client-protocol.h. SYSTEM makes consumers find out_dir through
+    # -isystem, so warnings inside the header are not reported against
+    # engine code.
+    set_target_properties(${target_name} PROPERTIES SYSTEM TRUE)
     target_link_libraries(${target_name} PUBLIC PkgConfig::WaylandClient)
 endfunction()
