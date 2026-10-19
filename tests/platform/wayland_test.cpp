@@ -1,9 +1,13 @@
+#include <engine/core/logger.hpp>
 #include <engine/platform/window.hpp>
 #include <expected>
 #include <gtest/gtest.h>
 #include <platform/linux/wayland/registry_globals.hpp>
 #include <platform/linux/wayland/wayland_connection.hpp>
 
+using engine::core::CaptureSink;
+using engine::core::Logger;
+using engine::core::Severity;
 using engine::platform::WindowError;
 using engine::platform::wayland::choose_globals;
 using engine::platform::wayland::FoundGlobals;
@@ -76,7 +80,10 @@ TEST(RegistryGlobals, BindsOfferedVersionWhenOlder) {
 }
 
 TEST(WaylandConnection, ReportsNoDisplayForMissingSocket) {
-    auto const connection{WaylandConnection::create("does not exist")};
+    CaptureSink sink;
+    Logger logger{sink, Severity::Debug};
+
+    auto const connection{WaylandConnection::create("does not exist", logger)};
     ASSERT_FALSE(connection);
     EXPECT_EQ(connection, std::unexpected{WindowError::NoDisplay});
 }

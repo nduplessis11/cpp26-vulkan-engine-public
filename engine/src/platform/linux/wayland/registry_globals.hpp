@@ -23,11 +23,13 @@ struct FoundGlobals {
 struct RequiredGlobals {
     GlobalEntry compositor;
     GlobalEntry wm_base;
+    constexpr auto operator==(RequiredGlobals const&) const -> bool = default;
 };
 
 auto record_global(FoundGlobals& found, std::uint32_t name,
                    std::string_view interface, std::uint32_t version) -> void;
 
+[[nodiscard]]
 auto choose_globals(FoundGlobals const& found)
     -> std::expected<RequiredGlobals, WindowError>;
 

@@ -5,6 +5,7 @@
 #include <expected>
 #include <optional>
 #include <string_view>
+#include <utility>
 
 namespace engine::platform {
 
@@ -51,6 +52,7 @@ constexpr auto describe(WindowError error) -> std::string_view {
         return "Proxy creation failed";
         break;
     }
+    std::unreachable();
 }
 
 struct IWindow {
