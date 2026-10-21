@@ -1,9 +1,11 @@
 #include <engine/core/logger.hpp>
+#include <engine/platform/wayland.hpp>
 #include <engine/platform/window.hpp>
 #include <expected>
 #include <gtest/gtest.h>
 #include <platform/linux/wayland/registry_globals.hpp>
 #include <platform/linux/wayland/wayland_connection.hpp>
+#include <stdlib.h>
 
 using engine::core::CaptureSink;
 using engine::core::Logger;
@@ -12,6 +14,7 @@ using engine::platform::WindowError;
 using engine::platform::wayland::choose_globals;
 using engine::platform::wayland::FoundGlobals;
 using engine::platform::wayland::GlobalEntry;
+using engine::platform::wayland::query_wayland_globals;
 using engine::platform::wayland::record_global;
 using engine::platform::wayland::WaylandConnection;
 
@@ -86,4 +89,20 @@ TEST(WaylandConnection, ReportsNoDisplayForMissingSocket) {
     auto const connection{WaylandConnection::create("does not exist", logger)};
     ASSERT_FALSE(connection);
     EXPECT_EQ(connection, std::unexpected{WindowError::NoDisplay});
+}
+
+// Set WAYLAND_DISPLAY to a socket name that does not exist and unset
+// WAYLAND_SOCKET, so the result is the same in Docker and on the Hyprland
+// desktop.
+TEST(QueryWaylandGlobals, ReportsNoDisplayForMissingDefaultSocket) {
+    ::setenv("WAYLAND_DISPLAY", "no-such-socket", 1);
+    ::unsetenv("WAYLAND_SOCKET");
+
+    CaptureSink sink;
+    Logger logger{sink, Severity::Debug};
+
+    auto const result{query_wayland_globals(logger)};
+
+    ASSERT_FALSE(result);
+    EXPECT_EQ(result, std::unexpected{WindowError::NoDisplay});
 }

@@ -1,5 +1,6 @@
 #include "wayland_connection.hpp"
 
+#include "engine/platform/wayland.hpp"
 #include "registry_globals.hpp"
 
 #include <cstdint>
@@ -126,6 +127,20 @@ auto WaylandConnection::create(char const* socket_name, Logger const& logger)
 
 auto WaylandConnection::bound_globals() const -> RequiredGlobals {
     return bound_;
+}
+
+auto query_wayland_globals(Logger const& logger)
+    -> std::expected<WaylandGlobalVersions, WindowError> {
+
+    auto const connection{WaylandConnection::create(nullptr, logger)};
+    if (!connection) {
+        return std::unexpected{connection.error()};
+    }
+    auto const globals{(*connection)->bound_globals()};
+    return WaylandGlobalVersions{
+        .compositor = globals.compositor.version,
+        .xdg_wm_base = globals.wm_base.version,
+    };
 }
 
 } // namespace engine::platform::wayland
