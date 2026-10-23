@@ -55,8 +55,17 @@ SCRATCHPAD_BIN := ./out/build/docker-linux-gcc-debug/apps/scratchpad/engine_scra
 build-scratchpad: configure-docker-linux
 	$(COMPOSE) run --rm linux cmake --build --preset docker-linux-gcc-debug --target engine_scratchpad
 
+# Share your desktop's Wayland socket with the container so programs in it can
+# open windows. Only do this if the socket exists. If it doesn't, Docker makes
+# an empty folder owned by root at that path on your machine instead.
+WAYLAND_SOCKET := $(XDG_RUNTIME_DIR)/$(WAYLAND_DISPLAY)
+ifneq ($(and $(XDG_RUNTIME_DIR),$(WAYLAND_DISPLAY),$(wildcard $(WAYLAND_SOCKET))),)
+	WAYLAND_RUN_FLAGS := -v $(WAYLAND_SOCKET):/tmp/$(WAYLAND_DISPLAY) \
+			     -e XDG_RUNTIME_DIR=/tmp -e WAYLAND_DISPLAY=$(WAYLAND_DISPLAY)
+endif
+
 run-scratchpad: build-scratchpad
-	$(COMPOSE) run --rm linux $(SCRATCHPAD_BIN) $(ARGS)
+	$(COMPOSE) run --rm $(WAYLAND_RUN_FLAGS) linux $(SCRATCHPAD_BIN) $(ARGS)
 
 # Run in the container to use the same GCC 17 libstdc++ as the build.
 SANDBOX_BIN := ./out/build/docker-linux-gcc-debug/apps/sandbox/engine_sandbox
@@ -65,7 +74,7 @@ build-sandbox: configure-docker-linux
 	$(COMPOSE) run --rm linux cmake --build --preset docker-linux-gcc-debug --target engine_sandbox
 
 run-sandbox: build-sandbox
-	$(COMPOSE) run --rm linux $(SANDBOX_BIN)
+	$(COMPOSE) run --rm $(WAYLAND_RUN_FLAGS) linux $(SANDBOX_BIN)
 
 configure-docker-windows:
 	$(COMPOSE) run --rm windows-mingw cmake --preset docker-windows-mingw-debug
@@ -75,8 +84,11 @@ build-docker-windows: configure-docker-windows
 
 # Use host tools for clang-tidy; the image has no Clang and uses newer GCC headers.
 # This preset creates compile_commands.json without the unsupported -fcontracts flag.
+# The Wayland backend includes a header that wayland-scanner writes during the
+# build. Build only that generation target so clang-tidy can read the header.
 configure-clang-tidy:
 	cmake --preset linux-clang-tidy
+	cmake --build out/build/linux-clang-tidy --target engine_xdg_shell_protocol_generate
 
 # run-clang-tidy checks every matching file, even when no rebuild is needed.
 # Limit it to this repo's sources; the database also contains GoogleTest files.
@@ -104,9 +116,20 @@ format-cmake:
 check-cmake-format:
 	gersemi --no-cache --check $(CMAKE_FORMAT_SOURCES)
 
+# misc-include-cleaner reports only on the file clang-tidy was given, never on
+# the headers that file includes, and the database lists only .cpp files. Give
+# clang-tidy each header as its own file so a header that relies on another
+# header's includes fails lint too. clang-tidy compiles a header with the flags
+# of a database entry with a similar path. Run one clang-tidy per header: given
+# several files, clang-tidy 22 reports "Error while processing" for every file
+# after the first one that fails. xargs still checks every header and exits
+# nonzero if any of them fails.
+LINT_HEADERS = $(shell find engine apps tests -name '*.hpp')
+
 lint: check-cmake-format configure-clang-tidy
 	clang-format --dry-run --Werror $(FORMAT_SOURCES)
 	run-clang-tidy -p out/build/linux-clang-tidy -quiet $(CONTRACT_STUBS) "$(LINT_SOURCES)"
+	printf '%s\n' $(LINT_HEADERS) | xargs -r -n1 clang-tidy -p out/build/linux-clang-tidy --quiet -checks='-*,misc-include-cleaner' $(CONTRACT_STUBS)
 
 # Apply clang-tidy fixes in place, then run clang-format, which wraps long lines.
 # FILE limits each pass to sources matching that regex, e.g.

@@ -21,6 +21,21 @@ include(StdPrint)
 engine_define_project_options()
 engine_validate_compiler()
 
+# The MinGW and headless presets select another backend and do not need the
+# Wayland library.
+if(
+    ENGINE_PLATFORM_BACKEND STREQUAL "WAYLAND"
+    OR (
+        ENGINE_PLATFORM_BACKEND STREQUAL "AUTO"
+        AND CMAKE_SYSTEM_NAME STREQUAL "Linux"
+    )
+)
+    set(ENGINE_BUILD_WAYLAND ON)
+    enable_language(C)
+else()
+    set(ENGINE_BUILD_WAYLAND OFF)
+endif()
+
 set(CMAKE_CXX_STANDARD 26)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)

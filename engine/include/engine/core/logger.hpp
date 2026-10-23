@@ -55,12 +55,19 @@ auto inline format_record(LogRecord const& record) -> std::string {
                        record.location.line());
 }
 
-struct Sink {
-    virtual ~Sink() = default;
+struct ISink {
+    virtual ~ISink() = default;
     virtual auto write(LogRecord const&) -> void = 0;
+
+  protected:
+    ISink() = default;
+    ISink(ISink const&) = default;
+    ISink(ISink&&) = default;
+    auto operator=(ISink const&) -> ISink& = default;
+    auto operator=(ISink&&) -> ISink& = default;
 };
 
-class StderrSink : public Sink {
+class StderrSink : public ISink {
   public:
     auto write(LogRecord const& record) -> void override {
         auto const line = format_record(record);
@@ -73,7 +80,7 @@ class StderrSink : public Sink {
     }
 };
 
-class CaptureSink : public Sink {
+class CaptureSink : public ISink {
   public:
     auto write(LogRecord const& record) -> void override {
         lines_.push_back(format_record(record));
@@ -102,7 +109,7 @@ template <class... Args> struct FmtWithLoc {
 
 class Logger {
   public:
-    explicit Logger(Sink& sink, Severity const threshold)
+    explicit Logger(ISink& sink, Severity const threshold)
         : sink_{sink}, threshold_{threshold} {}
 
     auto log(Severity const severity, Category const category,
@@ -139,7 +146,7 @@ class Logger {
     }
 
   private:
-    Sink& sink_;
+    ISink& sink_;
     Severity threshold_;
 };
 

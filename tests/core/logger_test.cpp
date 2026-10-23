@@ -8,6 +8,7 @@
 
 using engine::core::CaptureSink;
 using engine::core::Category;
+using engine::core::ISink;
 using engine::core::Logger;
 using engine::core::LogRecord;
 using engine::core::Severity;
@@ -17,6 +18,16 @@ constexpr Category kSandbox{"sandbox"};
 static_assert(!std::is_default_constructible_v<Logger>,
               "A default-constructible Logger invites a global instance. "
               "Construct each one with the sink it writes to.");
+
+// `sink_a = sink_b` through two ISink& calls ISink::operator=, which has no
+// members to copy, so sink_a keeps its old lines.
+static_assert(!std::is_copy_assignable_v<ISink> &&
+                  !std::is_move_assignable_v<ISink>,
+              "Assigning through an ISink& copies nothing. Keep ISink's "
+              "assignment operators protected.");
+static_assert(std::is_copy_assignable_v<CaptureSink>,
+              "Protected ISink assignment must still let a derived sink "
+              "copy itself.");
 
 // Severity names.
 

@@ -7,6 +7,7 @@ Checks: >
   cppcoreguidelines-init-variables,
   cppcoreguidelines-narrowing-conversions,
   google-explicit-constructor,
+  misc-include-cleaner,
   modernize-use-nullptr,
   modernize-use-trailing-return-type,
   performance-*,
@@ -19,7 +20,22 @@ Checks: >
   readability-inconsistent-declaration-parameter-name,
   readability-redundant-*,
   readability-static-accessed-through-instance
-WarningsAsErrors: ''
+# GCC compiles a file that uses std::optional without including <optional> if
+# another header it includes happens to include <optional>. The file stops
+# compiling when that other header drops the include. Fail lint on the missing
+# include instead.
+WarningsAsErrors: 'misc-include-cleaner'
+CheckOptions:
+  # Report missing includes only. clangd still shows unused ones in the editor.
+  misc-include-cleaner.UnusedIncludes: false
+  # Keep this list in sync with Diagnostics.Includes.IgnoreHeader in .clangd.
+  # bits/: include-cleaner has no public header recorded for some standard
+  # names, such as the chrono literal 10ms, and asks for the libstdc++ internal
+  # header bits/chrono.h even when <chrono> is included.
+  # wayland-client.h: the documented include for the Wayland client API. It
+  # includes wayland-client-core.h and wayland-client-protocol.h, where the
+  # functions are declared.
+  misc-include-cleaner.IgnoreHeaders: 'bits/.*;wayland-client(-core|-protocol)?\.h'
 # Match source directories explicitly: 'engine/.*' also matches the checkout name
 # ending in '-engine/', which would include fetched GoogleTest headers.
 HeaderFilterRegex: '.*/(engine/include|apps|tests)/.*'

@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdint>
+#include <engine/platform/native_window_handle.hpp>
 #include <engine/platform/window.hpp>
 #include <expected>
 #include <limits>
@@ -9,12 +10,12 @@
 
 namespace engine::platform {
 
-class HeadlessWindow : public Window {
+class HeadlessWindow : public IWindow {
   public:
     static auto create(WindowConfig const config)
         -> std::expected<std::unique_ptr<HeadlessWindow>, WindowError> {
         if (!is_valid_initial(config)) {
-            return std::unexpected{WindowError{}};
+            return std::unexpected{WindowError::InvalidConfig};
         }
 
         return std::unique_ptr<HeadlessWindow>{new HeadlessWindow{config}};
@@ -46,7 +47,7 @@ class HeadlessWindow : public Window {
         auto const config{
             WindowConfig{.logical_size = logical_size, .scale = scale}};
         if (!is_valid_resize(config)) {
-            return std::unexpected{WindowError{}};
+            return std::unexpected{WindowError::InvalidConfig};
         }
 
         pending_resize_ = config;

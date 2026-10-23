@@ -13,7 +13,7 @@ Run `python tools/check_environment.py`.
 
 ## Linux
 
-The core track starts with Wayland. Development packages eventually include Wayland client, wayland-protocols, xkbcommon, pkg-config, and later XCB. Package names vary by distribution.
+The core track starts with Wayland. Development packages eventually include Wayland client, wayland-scanner, xkbcommon, pkg-config, and later XCB. Package names vary by distribution. The protocol XML files come from `third_party/wayland-protocols/`, not from the system wayland-protocols package; see the README there for the upstream version.
 
 ```bash
 cmake --preset linux-gcc-debug
@@ -146,8 +146,9 @@ make lint
 ```
 
 This configures the `linux-clang-tidy` preset and then runs `run-clang-tidy` over the
-resulting `compile_commands.json`. A full pass takes about six seconds and needs no
-build.
+resulting `compile_commands.json`. A full pass takes about six seconds and compiles
+nothing. It builds one target, `engine_xdg_shell_protocol_generate`, which runs
+`wayland-scanner` to write the xdg-shell header that the Wayland backend includes.
 
 Before clang-tidy runs, `make lint` runs `clang-format --dry-run --Werror` over
 `engine/`, `apps/`, and `tests/` and stops on any file that differs from
@@ -189,9 +190,9 @@ Four things about this setup are deliberate:
   cannot filter them out: `HeaderFilterRegex` filters *headers*, while a translation
   unit's own source file is always analyzed.
 
-`WarningsAsErrors` is empty in `.clang-tidy`, so findings never fail anything. No
-build or test preset enables clang-tidy, so this is an on-demand pass rather than a
-cost every build pays.
+`.clang-tidy` treats `misc-include-cleaner` warnings as errors, so missing includes
+fail lint. No build or test preset enables clang-tidy, so this is an on-demand
+pass rather than a cost every build pays.
 
 ## Docker (containerized builds)
 
