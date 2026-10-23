@@ -42,4 +42,8 @@ if(ENGINE_BUILD_WAYLAND)
         engine_platform_wayland
         PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/include"
     )
+    target_link_libraries(engine_runtime INTERFACE engine_platform_wayland)
+    target_compile_definitions(engine_runtime INTERFACE ENGINE_HAS_WAYLAND=1)
+else()
+    target_compile_definitions(engine_runtime INTERFACE ENGINE_HAS_WAYLAND=0)
 endif()

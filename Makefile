@@ -74,7 +74,7 @@ build-sandbox: configure-docker-linux
 	$(COMPOSE) run --rm linux cmake --build --preset docker-linux-gcc-debug --target engine_sandbox
 
 run-sandbox: build-sandbox
-	$(COMPOSE) run --rm linux $(SANDBOX_BIN)
+	$(COMPOSE) run --rm $(WAYLAND_RUN_FLAGS) linux $(SANDBOX_BIN)
 
 configure-docker-windows:
 	$(COMPOSE) run --rm windows-mingw cmake --preset docker-windows-mingw-debug

@@ -6,6 +6,7 @@
 #include <engine/core/logger.hpp>
 #include <engine/core/scaffold_info.hpp>
 #include <engine/platform/headless_window.hpp>
+#include <engine/platform/wayland.hpp>
 #include <engine/platform/window.hpp>
 #include <exception>
 #include <memory>
@@ -28,11 +29,14 @@ using engine::platform::Extent;
 using engine::platform::HeadlessWindow;
 using engine::platform::IWindow;
 using engine::platform::WindowConfig;
+using engine::platform::WindowError;
+using engine::platform::wayland::query_wayland_globals;
 
 using namespace std::chrono_literals;
 
 constexpr Category kSandbox{"sandbox"};
 constexpr Category kVulkan{"vulkan"};
+constexpr Category kWayland{"wayland"};
 constexpr Category kWindow{"window"};
 
 constexpr FrameClockConfig kSandboxConfig{
@@ -60,6 +64,26 @@ auto run() -> int {
 #else
     logger.log(Severity::Warn, kVulkan,
                "1.4 SDK not found; scaffold-only configuration");
+#endif
+
+#if ENGINE_HAS_WAYLAND
+    auto const wayland_globals{query_wayland_globals(logger)};
+    if (!wayland_globals) {
+        if (wayland_globals.error() == WindowError::NoDisplay) {
+            logger.log(Severity::Info, kWayland,
+                       "no Wayland display; running headless");
+        } else {
+            logger.log(Severity::Error, kWayland,
+                       "Error fetching wayland_globals: {}",
+                       engine::platform::describe(wayland_globals.error()));
+            return EXIT_FAILURE;
+        }
+    } else {
+        logger.log(Severity::Info, kWayland, "Compositor: {}",
+                   wayland_globals->compositor);
+        logger.log(Severity::Info, kWayland, "WM Base: {}",
+                   wayland_globals->xdg_wm_base);
+    }
 #endif
 
     auto constexpr config{WindowConfig{
