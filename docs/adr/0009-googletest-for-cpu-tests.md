@@ -72,9 +72,12 @@ A configure with no network now fails. Both build images were verified to have
 configure-time network; an offline or air-gapped build would need the pin
 switched to a vendored copy.
 
-`gtest_add_tests()` only sees test names spelled literally in the source, so
-`TEST_P` and `TYPED_TEST` are invisible to the cross build's registration. If
-those become necessary, install wine in the windows-mingw image and set
+`gtest_add_tests()` only sees test names spelled literally in the source. It
+registers each `TEST_P` or `TYPED_TEST` as one CTest test whose
+`--gtest_filter` wildcard runs every instantiation, so the cross build cannot
+report or rerun one parameter value or one type on its own (checked in CMake
+4.4.4's `GoogleTest.cmake`). If per-instantiation tests become necessary,
+install wine in the windows-mingw image and set
 `CMAKE_CROSSCOMPILING_EMULATOR` so `gtest_discover_tests()` works again.
 
 This is the repo's first external source dependency and sets the pattern:
