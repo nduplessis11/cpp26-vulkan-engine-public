@@ -83,7 +83,12 @@ endif()
 
 add_subdirectory(engine)
 add_subdirectory(apps/sandbox)
-add_subdirectory(apps/scratchpad)
+
+# The public copy of this repo has no apps/scratchpad, so configure must not
+# require it.
+if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/apps/scratchpad/CMakeLists.txt")
+    add_subdirectory(apps/scratchpad)
+endif()
 
 if(ENGINE_BUILD_TESTS)
     include(CTest)
